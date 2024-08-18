@@ -185,7 +185,7 @@ class Environment:
             This method deletes any previous screenshot in the folder before saving the new one.
         """
         # Directory where screenshots are saved
-        screenshot_dir = os.path.join(os.getcwd(), "Assets", "Screenshots")
+        screenshot_dir = os.path.join(os.getcwd(), "..\screenshots")
 
         # Find the only PNG file in the directory
         png_files = [f for f in os.listdir(screenshot_dir) if f.endswith('.png')]
@@ -199,7 +199,7 @@ class Environment:
                     len(png_files)))
 
 def main():
-    unity_exe_path = os.path.join(os.getcwd(), "jenga-ai-solver.exe")  # Path to the Unity executable in the same folder
+    unity_exe_path = os.path.join(os.getcwd(), "../unity_build/jenga-game.exe")
     with Environment(unity_exe_path=unity_exe_path) as env:
         while True:
             print("\nWhat action would you like to do?")
