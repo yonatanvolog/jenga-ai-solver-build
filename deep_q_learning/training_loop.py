@@ -6,6 +6,8 @@ from PIL import Image
 from deep_q_learning.deep_q_agent import HierarchicalDQNAgent
 from environment.environment import Environment
 
+COLOR_TO_INT = {"y": 0, "b": 1, "g": 2}
+
 
 def load_image(filename):
     # Open the image file
@@ -24,23 +26,24 @@ def preprocess_image(image):
 
 
 def training_loop():
-    num_episodes = 1000
+    num_episodes = 2
     batch_size = 32
     target_update = 10
 
     agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=10, num_actions_level_2=3)
     env = Environment()
+    env.set_timescale(100)
 
     for episode in range(num_episodes):
-        state = preprocess_image(load_image(env.reset()))
+        env.reset()
+        state = preprocess_image(load_image(env.get_screenshot()))
 
         for _ in itertools.count():
             action = agent.select_action(state)
-            reward = action[0]  # num_level
             next_state, is_fallen = env.step(action)
             next_state = preprocess_image(load_image(next_state))
 
-            agent.memory.push(state, action, reward, next_state, is_fallen)
+            agent.memory.push(state, (action[0], COLOR_TO_INT[action[1]]), action[0], next_state, is_fallen)
             state = next_state
 
             agent.optimize_model(batch_size)

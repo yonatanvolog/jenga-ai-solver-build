@@ -54,15 +54,20 @@ class HierarchicalDQNAgent:
         batch_state, batch_action, batch_reward, batch_next_state, batch_done = zip(*transitions)
 
         batch_state = torch.cat(batch_state)
-        batch_action = torch.tensor(batch_action).unsqueeze(1)
         batch_reward = torch.tensor(batch_reward)
         batch_next_state = torch.cat(batch_next_state)
         batch_done = torch.tensor(batch_done, dtype=torch.float32)
 
-        current_q_values_level_1 = self.policy_net_level_1(batch_state).gather(1, batch_action)
+        # Split actions into separate tensors for level and color
+        batch_action_level = torch.tensor([action[0] for action in batch_action]).unsqueeze(1)
+        batch_action_color = torch.tensor([action[1] for action in batch_action]).unsqueeze(1)
+
+        current_q_values_level_1 = self.policy_net_level_1(batch_state).gather(1, batch_action_level)
         next_q_values_level_1 = self.target_net_level_1(batch_next_state).max(1)[0].detach()
-        current_q_values_level_2 = self.policy_net_level_2(batch_state).gather(1, batch_action)
+
+        current_q_values_level_2 = self.policy_net_level_2(batch_state).gather(1, batch_action_color)
         next_q_values_level_2 = self.target_net_level_2(batch_next_state).max(1)[0].detach()
+
         expected_q_values_level_1 = (next_q_values_level_1 * self.gamma * (1 - batch_done)) + batch_reward
         expected_q_values_level_2 = (next_q_values_level_2 * self.gamma * (1 - batch_done)) + batch_reward
 

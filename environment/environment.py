@@ -6,6 +6,7 @@ import atexit
 import signal
 from enum import Enum
 
+
 class CommandType(Enum):
     REMOVE = "remove"
     RESET = "reset"
@@ -15,6 +16,7 @@ class CommandType(Enum):
     SETDYNAMICFRICTION = "dynamicfriction"
     SETSCREENSHOTRES = "set_screenshot_res"
     UNKNOWN = "unknown"
+
 
 class Environment:
     def __init__(self, host="127.0.0.1", port=25001, unity_exe_path=None):
@@ -28,22 +30,12 @@ class Environment:
             try:
                 self.start_unity()
             except FileNotFoundError:
-                print(f"Warning: Unity executable not found at {self.unity_exe_path}. Continuing without launching Unity.")
-
-        # Register the cleanup handler to ensure Unity is closed
-        atexit.register(self.cleanup)
-
-        # Handle signals for clean termination
-        signal.signal(signal.SIGTERM, self.signal_handler)
-        signal.signal(signal.SIGINT, self.signal_handler)
+                print(f"Warning: Unity executable not found at {self.unity_exe_path}. Continuing without launching "
+                      f"Unity.")
 
     def __enter__(self):
         """Context management entry point."""
         return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context management exit point for cleanup."""
-        self.cleanup()
 
     def start_unity(self):
         """Start the Unity executable."""
@@ -58,16 +50,6 @@ class Environment:
             self.unity_process.wait()  # Ensure the process has terminated
             print("Unity process terminated.")
             self.unity_process = None
-
-    def cleanup(self):
-        """Cleanup function to stop Unity when the Python script exits."""
-        self.stop_unity()
-
-    def signal_handler(self, signum, frame):
-        """Handle termination signals to clean up resources."""
-        print(f"Received signal {signum}, terminating Unity and exiting...")
-        self.cleanup()
-        exit(0)
 
     def send_command(self, command):
         """Send a command to the Unity environment and receive the response."""
@@ -104,6 +86,7 @@ class Environment:
         is_fallen = self.is_fallen()
 
         # Retrieve the screenshot after performing the action
+        time.sleep(0.5)
         screenshot = self.get_screenshot()
         return screenshot, is_fallen
 
@@ -174,7 +157,8 @@ class Environment:
         response = self.send_command("isfallen")
         return response.lower() == "true"
 
-    def get_screenshot(self):
+    @staticmethod
+    def get_screenshot():
         """
         Capture a screenshot of the Jenga tower from a 45-degree angle, showing two sides.
 
@@ -197,6 +181,7 @@ class Environment:
             raise FileNotFoundError(
                 "Expected one PNG file in the directory, but found {}".format(
                     len(png_files)))
+
 
 def main():
     unity_exe_path = os.path.join(os.getcwd(), "../unity_build/jenga-game.exe")
@@ -237,20 +222,20 @@ def main():
             elif choice == "3":
                 timescale = input("Enter the timescale value (e.g., 1.5): ").strip()
                 print(f"Setting timescale to {timescale}...")
-                env.set_timescale(timescale)
+                env.set_timescale(float(timescale))
                 print("Timescale set.")
 
             elif choice == "4":
                 static_friction = input("Enter the static friction value: ").strip()
                 print(f"Setting static friction to {static_friction}...")
-                env.set_static_friction(static_friction)
+                env.set_static_friction(float(static_friction))
                 print("Static friction set.")
 
             elif choice == "5":
                 dynamic_friction = input(
                     "Enter the dynamic friction value: ").strip()
                 print(f"Setting dynamic friction to {dynamic_friction}...")
-                env.set_dynamic_friction(dynamic_friction)
+                env.set_dynamic_friction(float(dynamic_friction))
                 print("Dynamic friction set.")
 
             elif choice == "6":
@@ -269,6 +254,7 @@ def main():
 
             else:
                 print("Invalid choice, please try again.")
+
 
 if __name__ == "__main__":
     main()
