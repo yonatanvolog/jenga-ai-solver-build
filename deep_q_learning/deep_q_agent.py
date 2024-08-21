@@ -14,7 +14,7 @@ INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
 class HierarchicalDQNAgent:
     def __init__(self, input_shape, num_actions_level_1, num_actions_level_2,
                  lr=1e-4, gamma=0.99, epsilon_start=1.0, epsilon_end=0.1,
-                 epsilon_decay=1000):
+                 epsilon_decay=5000):
         self.gamma = gamma
         self.epsilon = epsilon_start
         self.epsilon_end = epsilon_end
@@ -38,12 +38,14 @@ class HierarchicalDQNAgent:
         self.steps_done += 1
         self.epsilon = self.epsilon_end + (self.epsilon - self.epsilon_end) * \
             np.exp(-1. * self.steps_done / self.epsilon_decay)
+        print(self.epsilon)
 
         if random.random() > self.epsilon:
             with torch.no_grad():
                 return self.policy_net_level_1(state).argmax(dim=1).item(), \
                        INT_TO_COLOR[self.policy_net_level_2(state).argmax(dim=1).item()]
         else:
+            print("Exploring")
             return random.randrange(0, 9), INT_TO_COLOR[random.randrange(0, 2)]
 
     def optimize_model(self, batch_size):

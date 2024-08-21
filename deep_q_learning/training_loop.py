@@ -26,8 +26,8 @@ def preprocess_image(image):
 
 
 def training_loop():
-    num_episodes = 2
-    batch_size = 32
+    num_episodes = 100
+    batch_size = 10
     target_update = 10
 
     agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=10, num_actions_level_2=3)
@@ -35,6 +35,7 @@ def training_loop():
     env.set_timescale(100)
 
     for episode in range(num_episodes):
+        print("Started a new episode")
         env.reset()
         state = preprocess_image(load_image(env.get_screenshot()))
 
@@ -49,6 +50,7 @@ def training_loop():
             agent.optimize_model(batch_size)
 
             if is_fallen:
+                print("Stopped this episode")
                 break
 
         if episode % target_update == 0:

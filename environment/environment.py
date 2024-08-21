@@ -37,6 +37,14 @@ class Environment:
         """Context management entry point."""
         return self
 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context management exit point for cleanup."""
+        self.cleanup()
+
+    def cleanup(self):
+        """Cleanup function to stop Unity when the Python script exits."""
+        self.stop_unity()
+
     def start_unity(self):
         """Start the Unity executable."""
         if self.unity_exe_path and not self.unity_process:
@@ -51,42 +59,46 @@ class Environment:
             print("Unity process terminated.")
             self.unity_process = None
 
-    def send_command(self, command):
+    def send_command(self, command, retry_attempts=3, retry_delay=0.5):
         """Send a command to the Unity environment and receive the response."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((self.host, self.port))
-            sock.sendall(command.encode("utf-8"))
-            response = sock.recv(1024).decode("utf-8")
-            return response.strip()
+        for attempt in range(retry_attempts):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.connect((self.host, self.port))
+                    sock.sendall(command.encode("utf-8"))
+                    response = sock.recv(1024).decode("utf-8")
+                    return response.strip()
+            except (ConnectionResetError, ConnectionRefusedError) as e:
+                print(f"Connection error: {e}. Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+
+        raise ConnectionError(f"Failed to send command after {retry_attempts} attempts.")
 
     def reset(self):
         """Reset the Jenga game immediately."""
         response = self.send_command("reset")
         return response
 
-    def step(self, action, wait_seconds=0.5):
+    def step(self, action, wait_time=0.5):
         """
         Perform an action to remove a piece from the Jenga tower.
 
         Parameters:
             action (tuple): A tuple containing the level (int) and color (str - 'y', 'g', 'b') of the piece to remove.
-            wait_seconds (float): Time to wait after performing the action before checking if the tower has fallen.
+            wait_time (float): Number of seconds from making the action till making a snapshot.
 
         Returns:
             tuple: A tuple containing the path to the screenshot (str) and a boolean indicating if the tower has fallen.
         """
         level, color = action
         command = f"remove {level} {color}"
-        response = self.send_command(command)
-
-        # Wait for the specified time before checking if the tower has fallen
-        time.sleep(wait_seconds)
+        self.send_command(command)
 
         # Check if the tower has fallen
         is_fallen = self.is_fallen()
 
         # Retrieve the screenshot after performing the action
-        time.sleep(0.5)
+        time.sleep(wait_time)
         screenshot = self.get_screenshot()
         return screenshot, is_fallen
 
@@ -95,10 +107,12 @@ class Environment:
         Set the timescale of the Jenga game.
 
         Parameters:
-            timescale (float): The timescale to set. For example, a timescale of 2 means the game runs twice as fast as real life.
+            timescale (float): The timescale to set. For example, a timescale of 2 means the game runs twice as fast as
+            real life.
 
         Note:
-            This value is not saved between runs of the game and defaults to 1. You need to set it each time to ensure it is at the desired value.
+            This value is not saved between runs of the game and defaults to 1. You need to set it each time to ensure
+            it is at the desired value.
         """
         command = f"timescale {timescale}"
         response = self.send_command(command)
@@ -158,7 +172,7 @@ class Environment:
         return response.lower() == "true"
 
     @staticmethod
-    def get_screenshot():
+    def get_screenshot(retry_attempts=3, retry_delay=0.25):
         """
         Capture a screenshot of the Jenga tower from a 45-degree angle, showing two sides.
 
@@ -173,6 +187,11 @@ class Environment:
 
         # Find the only PNG file in the directory
         png_files = [f for f in os.listdir(screenshot_dir) if f.endswith('.png')]
+        attempt_count = 1
+        while len(png_files) != 1 and attempt_count < retry_attempts:
+            time.sleep(retry_delay)
+            png_files = [f for f in os.listdir(screenshot_dir) if f.endswith('.png')]
+            attempt_count += 1
 
         if len(png_files) == 1:
             screenshot_path = os.path.join(screenshot_dir, png_files[0])
@@ -206,16 +225,16 @@ def main():
             elif choice == "2":
                 level = input("Enter the level number: ").strip()
                 color = input("Enter the color (y, b, g): ").strip()
-                wait_seconds = input(
+                wait_time = input(
                     "Enter the wait time in seconds (default is 0.5): ").strip()
-                if wait_seconds:
-                    wait_seconds = float(wait_seconds)
+                if wait_time:
+                    wait_time = float(wait_time)
                 else:
-                    wait_seconds = 0.5
+                    wait_time = 0.5
                 action = (level, color)
                 print(
                     f"Performing action: remove piece at level {level}, color {color}...")
-                screenshot, is_fallen = env.step(action, wait_seconds)
+                screenshot, is_fallen = env.step(action, wait_time)
                 print(f"Action performed. Screenshot saved at: {screenshot}")
                 print(f"Has the tower fallen? {'Yes' if is_fallen else 'No'}")
 
