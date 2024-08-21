@@ -95,6 +95,7 @@ class Environment:
         self.send_command(command)
 
         # Check if the tower has fallen
+        time.sleep(0.1)
         is_fallen = self.is_fallen()
 
         # Retrieve the screenshot after performing the action

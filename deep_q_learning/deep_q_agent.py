@@ -76,6 +76,47 @@ class HierarchicalDQNAgent:
         # Replay memory to store experiences
         self.memory = ReplayMemory(10000)
 
+    def save_model(self, level_1_path="level_1.pth", level_2_path="level_2.pth"):
+        """
+        Save the weights of the policy networks to files.
+
+        Args:
+            level_1_path (str): Path to save the level 1 network weights.
+            level_2_path (str): Path to save the level 2 network weights.
+        """
+        torch.save(self.policy_net_level_1.state_dict(), level_1_path)
+        torch.save(self.policy_net_level_2.state_dict(), level_2_path)
+        print(f"Model saved to {level_1_path} and {level_2_path}")
+
+    def load_model(self, level_1_path="level_1.pth", level_2_path="level_2.pth"):
+        """
+        Load the weights of the policy networks from files.
+
+        Args:
+            level_1_path (str): Path to load the level 1 network weights from.
+            level_2_path (str): Path to load the level 2 network weights from.
+        """
+        self.policy_net_level_1.load_state_dict(torch.load(level_1_path, weights_only=True))
+        self.policy_net_level_2.load_state_dict(torch.load(level_2_path, weights_only=True))
+        self.target_net_level_1.load_state_dict(self.policy_net_level_1.state_dict())
+        self.target_net_level_2.load_state_dict(self.policy_net_level_2.state_dict())
+        print(f"Model loaded from {level_1_path} and {level_2_path}")
+
+    def clone_model(self):
+        """
+        Clones the current policy networks to create an adversary.
+
+        Returns:
+            HierarchicalDQNAgent: A new instance of HierarchicalDQNAgent initialized with the same weights.
+        """
+        adversary = HierarchicalDQNAgent(input_shape=(128, 64),
+                                         num_actions_level_1=self.policy_net_level_1.fc2.out_features,
+                                         num_actions_level_2=self.policy_net_level_2.fc2.out_features)
+        adversary.policy_net_level_1.load_state_dict(self.policy_net_level_1.state_dict())
+        adversary.policy_net_level_2.load_state_dict(self.policy_net_level_2.state_dict())
+        adversary.update_target_net()  # Synchronize target networks
+        return adversary
+
     def select_action(self, state):
         """
         Selects an action based on the current state using the epsilon-greedy policy.
@@ -99,7 +140,7 @@ class HierarchicalDQNAgent:
                        INT_TO_COLOR[self.policy_net_level_2(state).argmax(dim=1).item()]
         else:
             print("Exploring")
-            return random.randrange(0, 9), INT_TO_COLOR[random.randrange(0, 2)]
+            return random.randrange(0, 10), INT_TO_COLOR[random.randrange(0, 3)]
 
     def optimize_model(self, batch_size):
         """
