@@ -5,8 +5,12 @@ import torch.nn.functional as F
 from torch import optim
 from deep_q_learning.deep_q_network import DQN, ReplayMemory
 
+MAX_LEVEL = 12
+MAX_BLOCKS_IN_LEVEL = 3
 # Mapping from integer to color for Jenga blocks
 INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
+# Mapping from color to integer for Jenga blocks
+COLOR_TO_INT = {"y": 0, "b": 1, "g": 2}
 
 
 class HierarchicalDQNAgent:
@@ -76,6 +80,9 @@ class HierarchicalDQNAgent:
         # Replay memory to store experiences
         self.memory = ReplayMemory(10000)
 
+        # Taken actions not to repeat
+        self.taken_actions = set()
+
     def save_model(self, level_1_path="level_1.pth", level_2_path="level_2.pth"):
         """
         Save the weights of the policy networks to files.
@@ -117,6 +124,12 @@ class HierarchicalDQNAgent:
         adversary.update_target_net()  # Synchronize target networks
         return adversary
 
+    def reset_taken_actions(self):
+        """
+        Resets the set of taken actions. This should be called at the start of each episode.
+        """
+        self.taken_actions = set()
+
     def select_action(self, state):
         """
         Selects an action based on the current state using the epsilon-greedy policy.
@@ -134,13 +147,30 @@ class HierarchicalDQNAgent:
         print(self.epsilon)
 
         # Choose action based on epsilon-greedy policy
+        possible_actions = list({(level, INT_TO_COLOR[color]) for level in range(MAX_LEVEL)
+                                for color in range(MAX_BLOCKS_IN_LEVEL)} - self.taken_actions)
+        if len(possible_actions) == 0:  # If no free actions, return None
+            return
+
         if random.random() > self.epsilon:
+            # Exploitation: Select the best action that hasn't been taken yet
+            best_q_value = float('-inf')
+            best_action = random.choice(possible_actions)
             with torch.no_grad():
-                return self.policy_net_level_1(state).argmax(dim=1).item(), \
-                       INT_TO_COLOR[self.policy_net_level_2(state).argmax(dim=1).item()]
+                for action in possible_actions:
+                    level, color = action
+                    q_value_level = self.policy_net_level_1(state)[0, level].item()
+                    q_value_color = self.policy_net_level_2(state)[0, COLOR_TO_INT[color]].item()
+                    if q_value_level + q_value_color > best_q_value:
+                        best_q_value = q_value_level + q_value_color
+                        best_action = action
+                print(f"Exploiting: Selected action: {best_action}")
         else:
-            print("Exploring")
-            return random.randrange(0, 10), INT_TO_COLOR[random.randrange(0, 3)]
+            best_action = random.choice(possible_actions)
+            print(f"Exploring: Selected action {best_action}")
+
+        self.taken_actions.add(best_action)  # Record the action as taken
+        return best_action
 
     def optimize_model(self, batch_size):
         """

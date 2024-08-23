@@ -56,11 +56,10 @@ def calculate_reward(action, is_fallen):
     Returns:
         int: The calculated reward, including a penalty if the tower fell.
     """
-    fall_penalty = -50  # Penalty for causing the tower to fall
-    reward = action[0]  # Reward based on the level of the block removed
+    reward = action[0] + (1 if action[1] == "b" else 0)  # Reward based on the level of the block removed
 
     if is_fallen:
-        reward += fall_penalty  # Apply penalty if the tower falls
+        reward = -50  # Apply penalty if the tower falls
 
     return reward
 
@@ -113,12 +112,12 @@ def training_loop(if_load_weights=True, if_training_against_adversary=False, eff
         efficiency_threshold (int): The minimum number of moves before the tower falls to consider the strategy
                                     efficient.
     """
-    num_episodes = 100
+    num_episodes = 50
     batch_size = 10
     target_update = 10
 
     # Initialize the agent and environment
-    agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=10, num_actions_level_2=3)
+    agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
 
     if if_load_weights:
         # Load model weights if they exist
@@ -136,6 +135,7 @@ def training_loop(if_load_weights=True, if_training_against_adversary=False, eff
     for episode in range(num_episodes):
         print("Started a new episode")
         env.reset()  # Reset the environment for a new episode
+        agent.reset_taken_actions()  # Make all actions unseen
         state = preprocess_image(load_image(env.get_screenshot()))  # Get and preprocess the initial state
         move_count = 0  # Track the number of moves in the current episode
 
@@ -145,6 +145,9 @@ def training_loop(if_load_weights=True, if_training_against_adversary=False, eff
                 action = adversary.select_action(state)
             else:
                 action = agent.select_action(state)  # Agent's action
+
+            if action is None:
+                break
 
             next_state, is_fallen = env.step(action)
             next_state = preprocess_image(load_image(next_state))
@@ -173,7 +176,7 @@ def training_loop(if_load_weights=True, if_training_against_adversary=False, eff
 
 if __name__ == "__main__":
     # First phase: the agent trains against itself, starting from scratch
-    training_loop(if_load_weights=False)
+    # training_loop(if_load_weights=False)
 
     # Second phase: the agent trains against the random-strategy adversary
     training_loop(if_training_against_adversary=True)
