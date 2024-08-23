@@ -3,7 +3,10 @@ import random
 
 import torchvision.transforms as transforms
 from PIL import Image
+
+from deep_q_learning.adversary import Adversary
 from deep_q_learning.deep_q_agent import HierarchicalDQNAgent
+from deep_q_learning.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
 from environment.environment import Environment
 
 
@@ -96,7 +99,8 @@ def update_epsilon(agent, efficiency_threshold, move_count):
         print(f"Decreased exploration: epsilon = {agent.epsilon}")
 
 
-def training_loop(if_load_weights=True, if_training_against_adversary=False, efficiency_threshold=10):
+def training_loop(if_load_weights=True, if_training_against_adversary=False, strategy=RandomStrategy(),
+                  efficiency_threshold=10):
     """
     Runs the training loop for the HierarchicalDQNAgent in a Jenga environment.
 
@@ -106,72 +110,121 @@ def training_loop(if_load_weights=True, if_training_against_adversary=False, eff
     Args:
         if_load_weights (bool): Whether to load pre-existing model weights if they exist or start from scratch.
         if_training_against_adversary (bool): Whether to train against a DNN adversary.
+        strategy (Strategy): Strategy for the adversary to take.
         efficiency_threshold (int): The minimum number of moves before the tower falls to consider the strategy
                                     efficient.
     """
+    print("Starting a new training loop")
+
     num_episodes = 50
     batch_size = 10
     target_update = 10
 
     # Initialize the agent and environment
     agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
-
-    if if_load_weights:
-        # Load model weights if they exist
-        try:
-            agent.load_model()
-        except FileNotFoundError:
-            print("No previous model found. Starting from scratch.")
-
-    # Create an adversary based on the agent's current model
-    adversary = agent.clone_model() if if_training_against_adversary else None
-
     env = Environment()
     env.set_timescale(100)  # Speed up the simulation
 
+    # Load model weights if they exist
+    if if_load_weights:
+        try:
+            agent.load_model()
+        except FileNotFoundError:
+            print("No previous model found. Starting from scratch")
+
+    # Create an adversary based on the agent's current model
+    adversary = None
+    if if_training_against_adversary:
+        adversary = Adversary(strategy)
+    if adversary:
+        print("The agent is training against an adversary with random strategy")
+
     for episode in range(num_episodes):
-        print("Started a new episode")
-        env.reset()  # Reset the environment for a new episode
-        agent.reset_taken_actions()  # Make all actions unseen
-        if adversary:
-            adversary.reset_taken_actions()
-            adversary.taken_actions = agent.taken_actions
-        state = preprocess_image(load_image(env.get_screenshot()))  # Get and preprocess the initial state
-        move_count = 0  # Track the number of moves in the current episode
-
-        for _ in itertools.count():
-            if adversary and random.random() < 0.5:
-                # Adversary makes a move 50% of the time
-                action = adversary.select_action(state)
-            else:
-                action = agent.select_action(state)  # Agent's action
-
-            if action is None:
-                print("No action to take. Ending the episode")
-                break
-
-            next_state, is_fallen = env.step(action)
-            next_state = preprocess_image(load_image(next_state))
-
-            agent.memory.push(state, action, calculate_reward(action, is_fallen), next_state, is_fallen)
-            state = next_state
-            move_count += 1
-
-            agent.optimize_model(batch_size)
-
-            if is_fallen:  # Stop the episode if the tower has fallen
-                print("Stopped this episode")
-                break
-
-        # Adjust exploration if the tower fell too quickly
-        update_epsilon(agent, efficiency_threshold, move_count)
-
-        # Update the target network periodically
-        if episode % target_update == 0:
-            agent.update_target_net()
+        _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episode, num_episodes, target_update)
 
     # Save model weights at the end of the training session
     agent.save_model()
+
+
+def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episode, num_episodes, target_update):
+    """
+       Runs a single episode of training for the HierarchicalDQNAgent in the Jenga environment.
+
+       During the episode, the agent (and optionally an adversary) interacts with the environment, selecting actions
+       and optimizing its model based on the results of those actions. The episode continues until the Jenga tower
+       falls, or no more valid actions are available.
+
+       Args:
+           adversary (Adversary or None): An optional adversary agent that may take turns with the main agent.
+           agent (HierarchicalDQNAgent): The main agent being trained.
+           batch_size (int): The number of experiences to sample from replay memory for training.
+           efficiency_threshold (int): The minimum number of moves before the tower falls to consider the strategy
+                                       efficient.
+           env (Environment): The environment representing the Jenga game.
+           episode (int): The current episode number.
+           num_episodes (int): The total number of episodes in the training session.
+           target_update (int): The frequency (in episodes) at which the target network is updated.
+
+       Side Effects:
+           - Resets the environment and the `taken_actions` set of the agent (and optionally the adversary) at the
+           start of the episode.
+           - Adds the selected actions to the agent's replay memory for future training.
+           - Adjusts the agent's exploration-exploitation balance (epsilon) based on the episode's performance.
+           - Periodically updates the target network.
+
+       Returns:
+           None
+       """
+    print(f"Started episode {episode} out of {num_episodes}")
+    env.reset()  # Reset the environment for a new episode
+    taken_actions = set()  # Reset the made actions
+    previous_action = None
+    state = preprocess_image(load_image(env.get_screenshot()))  # Get and preprocess the initial state
+    move_count = 0  # Track the number of moves in the current episode
+    players = [(agent, "Agent"), (adversary, "Adversary") if adversary else None]
+
+    for player, role in itertools.cycle(players):
+        if player is None:  # Skip if there's no adversary
+            continue
+
+        if adversary:  # If there is an adversary, log whose move it is
+            print(f"{role}'s move")
+        result = _make_move(player, env, state, taken_actions, batch_size,
+                            previous_action if role == "Adversary" else None)
+        if result is None:
+            break
+
+        state, previous_action = result
+
+    # Adjust exploration if the tower fell too quickly
+    update_epsilon(agent, efficiency_threshold, move_count)
+    # Update the target network periodically
+    if episode % target_update == 0:
+        agent.update_target_net()
+
+
+def _make_move(agent, env, state, taken_actions, batch_size, previous_action=None):
+    if previous_action is None:
+        action = agent.select_action(state, taken_actions)  # Agent's action
+    else:
+        action = agent.select_action(state, taken_actions, previous_action)  # Adversary's action
+
+    if action is None:
+        print("No action to take. Ending the episode")
+        return
+
+    next_state, is_fallen = env.step(action)
+    next_state = preprocess_image(load_image(next_state))
+
+    if previous_action is None:
+        agent.memory.push(state, action, calculate_reward(action, is_fallen), next_state, is_fallen)
+        agent.optimize_model(batch_size)
+
+    if is_fallen:  # Stop the episode if the tower has fallen
+        print("The tower has fallen. Ending the episode")
+        return
+
+    return next_state, action
 
 
 if __name__ == "__main__":
@@ -179,4 +232,10 @@ if __name__ == "__main__":
     # training_loop(if_load_weights=False)
 
     # Second phase: the agent trains against the random-strategy adversary
-    training_loop(if_training_against_adversary=True)
+    training_loop(if_training_against_adversary=True, strategy=RandomStrategy())
+
+    # Third phase: the agent trains against a pessimistic-strategy adversary
+    training_loop(if_training_against_adversary=True, strategy=PessimisticStrategy())
+
+    # Fourth phase: the agent trains against an optimistic-strategy adversary
+    training_loop(if_training_against_adversary=True, strategy=OptimisticStrategy())

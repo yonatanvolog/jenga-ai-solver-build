@@ -4,9 +4,7 @@ import torch
 import torch.nn.functional as F
 from torch import optim
 from deep_q_learning.deep_q_network import DQN, ReplayMemory
-
-MAX_LEVEL = 12
-MAX_BLOCKS_IN_LEVEL = 3
+from environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL
 
 
 class HierarchicalDQNAgent:
@@ -76,9 +74,6 @@ class HierarchicalDQNAgent:
         # Replay memory to store experiences
         self.memory = ReplayMemory(10000)
 
-        # Taken actions not to repeat
-        self.taken_actions = set()
-
     def save_model(self, level_1_path="level_1.pth", level_2_path="level_2.pth"):
         """
         Save the weights of the policy networks to files.
@@ -120,18 +115,13 @@ class HierarchicalDQNAgent:
         adversary.update_target_net()  # Synchronize target networks
         return adversary
 
-    def reset_taken_actions(self):
-        """
-        Resets the set of taken actions. This should be called at the start of each episode.
-        """
-        self.taken_actions.clear()
-
-    def select_action(self, state):
+    def select_action(self, state, taken_actions):
         """
         Selects an action based on the current state using the epsilon-greedy policy.
 
         Args:
             state (torch.Tensor): The current state of the environment.
+            taken_actions (Set[Tuple[int, int]]): Already performed actions.
 
         Returns:
             tuple: A tuple containing the selected level and color of the block to remove.
@@ -144,7 +134,7 @@ class HierarchicalDQNAgent:
 
         # Choose action based on epsilon-greedy policy
         possible_actions = list({(level, color) for level in range(MAX_LEVEL)
-                                for color in range(MAX_BLOCKS_IN_LEVEL)} - self.taken_actions)
+                                for color in range(MAX_BLOCKS_IN_LEVEL)} - taken_actions)
         if len(possible_actions) == 0:  # If no free actions, return None
             return
 
@@ -165,7 +155,7 @@ class HierarchicalDQNAgent:
             best_action = random.choice(possible_actions)
             print(f"Exploring: Selected action {best_action}")
 
-        self.taken_actions.add(best_action)  # Record the action as taken
+        taken_actions.add(best_action)  # Record the action as taken
         return best_action
 
     def optimize_model(self, batch_size):

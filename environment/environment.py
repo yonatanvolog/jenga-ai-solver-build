@@ -7,6 +7,8 @@ import signal
 from enum import Enum
 
 
+MAX_LEVEL = 12
+MAX_BLOCKS_IN_LEVEL = 3
 # Mapping from integer to color for Jenga blocks
 INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
 
