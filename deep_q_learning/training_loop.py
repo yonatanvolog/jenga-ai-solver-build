@@ -204,6 +204,43 @@ def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episod
 
 
 def _make_move(agent, env, state, taken_actions, batch_size, previous_action=None):
+    """
+    Executes a move in the Jenga game by either the agent or the adversary.
+
+    This function selects an action based on the agent's or adversary's strategy, interacts with the environment
+    by performing the action, and updates the state accordingly. If the move is made by the agent, the function
+    also updates the agent's replay memory and optimizes its model.
+
+    Args:
+        agent (HierarchicalDQNAgent or Adversary): The agent or adversary making the move.
+        env (Environment): The environment representing the Jenga game.
+        state (torch.Tensor): The current state of the environment.
+        taken_actions (set): A set of actions that have already been taken, to avoid repetition.
+        batch_size (int): The number of experiences to sample from replay memory for training.
+        previous_action (tuple or None): The previous action taken by the agent. If None, the move is made by the agent;
+                                         otherwise, it's made by the adversary and uses the `previous_action` to inform
+                                         the selection of the next action.
+
+    Returns:
+        tuple or None: If the move is successful and the game continues, returns a tuple containing the next state and
+                       the action taken (next_state, action). If no action can be taken or the tower falls, returns None
+                       to indicate that the episode should end.
+
+    Side Effects:
+        - If `previous_action` is None (indicating the agent's move), the agent's replay memory is updated with the
+          action taken, and the agent's model is optimized based on the experience.
+        - Prints messages to indicate the outcome of the move, such as whether the episode should end.
+
+    Example:
+        next_state, action = _make_move(agent, env, state, taken_actions, batch_size)
+        if next_state is None:
+            break
+
+    Notes:
+        - The function assumes that `select_action` for the agent and adversary can handle different numbers of
+          arguments (with or without `previous_action`).
+        - The function handles the sequential turn-taking logic by checking the `previous_action` parameter.
+    """
     if previous_action is None:
         action = agent.select_action(state, taken_actions)  # Agent's action
     else:
