@@ -7,10 +7,6 @@ from deep_q_learning.deep_q_network import DQN, ReplayMemory
 
 MAX_LEVEL = 12
 MAX_BLOCKS_IN_LEVEL = 3
-# Mapping from integer to color for Jenga blocks
-INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
-# Mapping from color to integer for Jenga blocks
-COLOR_TO_INT = {"y": 0, "b": 1, "g": 2}
 
 
 class HierarchicalDQNAgent:
@@ -128,7 +124,7 @@ class HierarchicalDQNAgent:
         """
         Resets the set of taken actions. This should be called at the start of each episode.
         """
-        self.taken_actions = set()
+        self.taken_actions.clear()
 
     def select_action(self, state):
         """
@@ -147,7 +143,7 @@ class HierarchicalDQNAgent:
         print(self.epsilon)
 
         # Choose action based on epsilon-greedy policy
-        possible_actions = list({(level, INT_TO_COLOR[color]) for level in range(MAX_LEVEL)
+        possible_actions = list({(level, color) for level in range(MAX_LEVEL)
                                 for color in range(MAX_BLOCKS_IN_LEVEL)} - self.taken_actions)
         if len(possible_actions) == 0:  # If no free actions, return None
             return
@@ -160,7 +156,7 @@ class HierarchicalDQNAgent:
                 for action in possible_actions:
                     level, color = action
                     q_value_level = self.policy_net_level_1(state)[0, level].item()
-                    q_value_color = self.policy_net_level_2(state)[0, COLOR_TO_INT[color]].item()
+                    q_value_color = self.policy_net_level_2(state)[0, color].item()
                     if q_value_level + q_value_color > best_q_value:
                         best_q_value = q_value_level + q_value_color
                         best_action = action

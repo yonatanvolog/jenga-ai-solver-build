@@ -6,9 +6,6 @@ from PIL import Image
 from deep_q_learning.deep_q_agent import HierarchicalDQNAgent
 from environment.environment import Environment
 
-# Mapping from color to integer for Jenga blocks
-COLOR_TO_INT = {"y": 0, "b": 1, "g": 2}
-
 
 def load_image(filename):
     """
@@ -136,6 +133,9 @@ def training_loop(if_load_weights=True, if_training_against_adversary=False, eff
         print("Started a new episode")
         env.reset()  # Reset the environment for a new episode
         agent.reset_taken_actions()  # Make all actions unseen
+        if adversary:
+            adversary.reset_taken_actions()
+            adversary.taken_actions = agent.taken_actions
         state = preprocess_image(load_image(env.get_screenshot()))  # Get and preprocess the initial state
         move_count = 0  # Track the number of moves in the current episode
 
@@ -147,13 +147,13 @@ def training_loop(if_load_weights=True, if_training_against_adversary=False, eff
                 action = agent.select_action(state)  # Agent's action
 
             if action is None:
+                print("No action to take. Ending the episode")
                 break
 
             next_state, is_fallen = env.step(action)
             next_state = preprocess_image(load_image(next_state))
 
-            agent.memory.push(state, (action[0], COLOR_TO_INT[action[1]]), calculate_reward(action, is_fallen),
-                              next_state, is_fallen)
+            agent.memory.push(state, action, calculate_reward(action, is_fallen), next_state, is_fallen)
             state = next_state
             move_count += 1
 

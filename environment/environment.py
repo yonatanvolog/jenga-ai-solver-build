@@ -7,6 +7,10 @@ import signal
 from enum import Enum
 
 
+# Mapping from integer to color for Jenga blocks
+INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
+
+
 class CommandType(Enum):
     REMOVE = "remove"
     RESET = "reset"
@@ -91,7 +95,7 @@ class Environment:
             tuple: A tuple containing the path to the screenshot (str) and a boolean indicating if the tower has fallen.
         """
         level, color = action
-        command = f"remove {level} {color}"
+        command = f"remove {level} {INT_TO_COLOR[color]}"
         self.send_command(command)
 
         # Check if the tower has fallen
