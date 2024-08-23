@@ -139,7 +139,7 @@ def training_loop(if_load_weights=True, if_training_against_adversary=False, str
     if adversary:
         print("The agent is training against an adversary with random strategy")
 
-    for episode in range(num_episodes):
+    for episode in range(1, num_episodes + 1):
         _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episode, num_episodes, target_update)
 
     # Save model weights at the end of the training session
