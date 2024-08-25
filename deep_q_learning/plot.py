@@ -7,6 +7,9 @@ from deep_q_learning.deep_q_agent import HierarchicalDQNAgent
 from environment.environment import Environment
 from training_loop import training_loop, preprocess_image, load_image
 
+# Mapping from integer to color for Jenga blocks
+INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
+
 
 def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=20, batch_size=10, target_update=10):
     """
@@ -95,7 +98,7 @@ def evaluate_winrate(agent, strategy, num_tests):
             if agent_action is None:
                 break
 
-            next_state, is_fallen = env.step(agent_action)
+            next_state, is_fallen = env.step((agent_action[0], INT_TO_COLOR[agent_action[1]]))
             state = preprocess_image(load_image(next_state))
 
             if is_fallen:
@@ -108,7 +111,7 @@ def evaluate_winrate(agent, strategy, num_tests):
                 wins += 1
                 break
 
-            next_state, is_fallen = env.step(adversary_action)
+            next_state, is_fallen = env.step((agent_action[0], INT_TO_COLOR[adversary_action[1]]))
             state = preprocess_image(load_image(next_state))
 
             if is_fallen:

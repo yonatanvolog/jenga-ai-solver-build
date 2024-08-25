@@ -1,5 +1,4 @@
 import itertools
-import random
 
 import torchvision.transforms as transforms
 from PIL import Image
@@ -8,6 +7,9 @@ from deep_q_learning.adversary import Adversary
 from deep_q_learning.deep_q_agent import HierarchicalDQNAgent
 from deep_q_learning.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
 from environment.environment import Environment
+
+# Mapping from integer to color for Jenga blocks
+INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
 
 
 def load_image(filename):
@@ -252,7 +254,7 @@ def _make_move(agent, env, state, taken_actions, batch_size, previous_action=Non
         print("No action to take. Ending the episode")
         return
 
-    next_state, is_fallen = env.step(action)
+    next_state, is_fallen = env.step((action[0], INT_TO_COLOR[action[1]]))
     next_state = preprocess_image(load_image(next_state))
 
     if previous_action is None:
