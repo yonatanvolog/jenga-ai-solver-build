@@ -21,6 +21,7 @@ class CommandType(Enum):
     SETSTATICFRICTION = "staticfriction"
     SETDYNAMICFRICTION = "dynamicfriction"
     SETSCREENSHOTRES = "set_screenshot_res"
+    SETCOLLIDERDISTANCE = "set_fall_detect_distance"
     UNKNOWN = "unknown"
 
 
@@ -164,6 +165,21 @@ class Environment:
         response = self.send_command(command)
         return response
 
+    def set_collider_distance(self, value):
+        """
+        Set the distance of the colliders around the Jenga tower.
+
+        This method receives a float value (positive or negative), which will be added to the current distance of the
+        colliders from the tower. When calling the method, a visual representation of the colliders' distance will be
+        shown in the Unity game.
+
+        Parameters:
+            value (float): The value to adjust the colliders' distance.
+        """
+        command = f"set_fall_detect_distance {value}"
+        response = self.send_command(command)
+        return response
+
     def is_fallen(self):
         """
         Check if the Jenga tower has fallen.
@@ -220,7 +236,8 @@ def main():
             print("4: Set Static Friction")
             print("5: Set Dynamic Friction")
             print("6: Set Screenshot Resolution")
-            print("7: Exit")
+            print("7: Set Collider Distance")
+            print("8: Exit")
 
             choice = input("Enter the number of your choice: ").strip()
 
@@ -275,6 +292,12 @@ def main():
                     print("Invalid width value.")
 
             elif choice == "7":
+                distance = input("Enter the collider distance change value (e.g., -0.2 or 0.5): ").strip()
+                print(f"Setting collider distance to {distance}...")
+                env.set_collider_distance(float(distance))
+                print("Collider distance set.")
+
+            elif choice == "8":
                 print("Exiting...")
                 break
 
