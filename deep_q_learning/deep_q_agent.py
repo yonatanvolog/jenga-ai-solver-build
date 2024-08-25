@@ -130,7 +130,6 @@ class HierarchicalDQNAgent:
         # Update epsilon for exploration-exploitation trade-off
         self.epsilon = self.epsilon_end + (self.epsilon - self.epsilon_end) * \
             np.exp(-1. * self.steps_done / self.epsilon_decay)
-        print(self.epsilon)
 
         # Choose action based on epsilon-greedy policy
         possible_actions = list({(level, color) for level in range(MAX_LEVEL)

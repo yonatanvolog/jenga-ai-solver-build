@@ -99,8 +99,9 @@ def update_epsilon(agent, efficiency_threshold, move_count):
         print(f"Decreased exploration: epsilon = {agent.epsilon}")
 
 
-def training_loop(if_load_weights=True, if_training_against_adversary=False, strategy=RandomStrategy(),
-                  efficiency_threshold=10):
+def training_loop(num_episodes=50, batch_size=10, target_update=10, efficiency_threshold=10, if_load_weights=True,
+                  level_1_path="level_1.pth", level_2_path="level_2.pth", if_training_against_adversary=False,
+                  strategy=RandomStrategy()):
     """
     Runs the training loop for the HierarchicalDQNAgent in a Jenga environment.
 
@@ -108,17 +109,18 @@ def training_loop(if_load_weights=True, if_training_against_adversary=False, str
     the agent will train against an adversary initialized with the agent's weights from the last phase.
 
     Args:
+        num_episodes (int): Number of episodes to run for.
+        batch_size (int): Batch size.
+        target_update (int): Number of episodes after which to update the target network.
         if_load_weights (bool): Whether to load pre-existing model weights if they exist or start from scratch.
+        level_1_path (str): Path to the weights of the first DQN.
+        level_2_path (str): Path to the weights of the second DQN.
         if_training_against_adversary (bool): Whether to train against a DNN adversary.
         strategy (Strategy): Strategy for the adversary to take.
         efficiency_threshold (int): The minimum number of moves before the tower falls to consider the strategy
                                     efficient.
     """
     print("Starting a new training loop")
-
-    num_episodes = 50
-    batch_size = 10
-    target_update = 10
 
     # Initialize the agent and environment
     agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
@@ -128,7 +130,7 @@ def training_loop(if_load_weights=True, if_training_against_adversary=False, str
     # Load model weights if they exist
     if if_load_weights:
         try:
-            agent.load_model()
+            agent.load_model(level_1_path, level_2_path)
         except FileNotFoundError:
             print("No previous model found. Starting from scratch")
 
@@ -143,7 +145,7 @@ def training_loop(if_load_weights=True, if_training_against_adversary=False, str
         _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episode, num_episodes, target_update)
 
     # Save model weights at the end of the training session
-    agent.save_model()
+    agent.save_model(level_1_path, level_2_path)
 
 
 def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episode, num_episodes, target_update):
@@ -181,7 +183,7 @@ def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episod
     previous_action = None
     state = preprocess_image(load_image(env.get_screenshot()))  # Get and preprocess the initial state
     move_count = 0  # Track the number of moves in the current episode
-    players = [(agent, "Agent"), (adversary, "Adversary") if adversary else None]
+    players = [(agent, "Agent"), (adversary, "Adversary")]
 
     for player, role in itertools.cycle(players):
         if player is None:  # Skip if there's no adversary
