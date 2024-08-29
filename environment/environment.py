@@ -2,15 +2,11 @@ import socket
 import os
 import time
 import subprocess
-import atexit
-import signal
 from enum import Enum
 
 
 MAX_LEVEL = 12
 MAX_BLOCKS_IN_LEVEL = 3
-# Mapping from integer to color for Jenga blocks
-INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
 
 
 class CommandType(Enum):
@@ -98,7 +94,7 @@ class Environment:
             tuple: A tuple containing the path to the screenshot (str) and a boolean indicating if the tower has fallen.
         """
         level, color = action
-        command = f"remove {level} {INT_TO_COLOR[color]}"
+        command = f"remove {level} {color}"
         self.send_command(command)
 
         # Check if the tower has fallen

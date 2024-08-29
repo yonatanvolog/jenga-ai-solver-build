@@ -71,8 +71,11 @@ class OptimisticStrategy(Strategy):
         """
         if previous_action:
             previous_level = previous_action[0]
-            min_level = min(MAX_LEVEL, previous_level + 1)
-            level = random.randrange(min_level, MAX_LEVEL)
+            min_level = min(previous_level + 1, MAX_LEVEL)
+            try:
+                level = random.randrange(min_level, MAX_LEVEL)
+            except:
+                level = random.randrange(0, MAX_LEVEL)
         else:
             level = random.randrange(0, MAX_LEVEL)
         color = random.randrange(0, MAX_BLOCKS_IN_LEVEL)
@@ -101,7 +104,10 @@ class PessimisticStrategy(Strategy):
         if previous_action:
             previous_level = previous_action[0]
             max_level = max(0, previous_level - 1)
-            level = random.randrange(0, max_level)
+            try:
+                level = random.randrange(0, max_level + 1)
+            except:
+                level = random.randrange(0, MAX_LEVEL)
         else:
             level = random.randrange(0, MAX_LEVEL)
         color = random.randrange(0, MAX_BLOCKS_IN_LEVEL)
