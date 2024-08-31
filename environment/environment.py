@@ -2,11 +2,15 @@ import socket
 import os
 import time
 import subprocess
+import atexit
+import signal
 from enum import Enum
 
 
 MAX_LEVEL = 12
 MAX_BLOCKS_IN_LEVEL = 3
+# Mapping from integer to color for Jenga blocks
+INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
 
 
 class CommandType(Enum):
@@ -18,6 +22,7 @@ class CommandType(Enum):
     SETDYNAMICFRICTION = "dynamicfriction"
     SETSCREENSHOTRES = "set_screenshot_res"
     SETCOLLIDERDISTANCE = "set_fall_detect_distance"
+    GETNUMOFBLOCKSINLEVEL = "get_num_of_blocks_in_level"
     UNKNOWN = "unknown"
 
 
@@ -176,6 +181,22 @@ class Environment:
         response = self.send_command(command)
         return response
 
+    def get_num_of_blocks_in_level(self, level):
+        """
+        Get the number of blocks in a specific level of the Jenga tower.
+
+        This method receives an integer `level` (0 is the top) and returns the number of blocks in that level.
+
+        Parameters:
+            level (int): The level for which to retrieve the number of blocks.
+
+        Returns:
+            int: The number of blocks in the specified level.
+        """
+        command = f"get_num_of_blocks_in_level {level}"
+        response = self.send_command(command)
+        return int(response)
+
     def is_fallen(self):
         """
         Check if the Jenga tower has fallen.
@@ -233,7 +254,8 @@ def main():
             print("5: Set Dynamic Friction")
             print("6: Set Screenshot Resolution")
             print("7: Set Collider Distance")
-            print("8: Exit")
+            print("8: Get Number of Blocks in Level")
+            print("9: Exit")
 
             choice = input("Enter the number of your choice: ").strip()
 
@@ -294,6 +316,14 @@ def main():
                 print("Collider distance set.")
 
             elif choice == "8":
+                level = input("Enter the level number: ").strip()
+                if level.isdigit():
+                    num_of_blocks = env.get_num_of_blocks_in_level(int(level))
+                    print(f"Number of blocks in level {level}: {num_of_blocks}")
+                else:
+                    print("Invalid level value.")
+
+            elif choice == "9":
                 print("Exiting...")
                 break
 
