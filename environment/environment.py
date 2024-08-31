@@ -23,6 +23,7 @@ class CommandType(Enum):
     SETSCREENSHOTRES = "set_screenshot_res"
     SETCOLLIDERDISTANCE = "set_fall_detect_distance"
     GETNUMOFBLOCKSINLEVEL = "get_num_of_blocks_in_level"
+    GETAVERAGEMAXTILTANGLE = "get_average_max_tilt_angle"  # Added new command
     UNKNOWN = "unknown"
 
 
@@ -197,6 +198,27 @@ class Environment:
         response = self.send_command(command)
         return int(response)
 
+    def get_average_max_tilt_angle(self):
+        """
+        Get the average of the maximum tilt angles recorded for all cubes in the Jenga tower.
+
+        The average returned represents the average of the maximum tilt angles experienced by the tower
+        between the removal of cubes. After removing a cube, the tilt value for each remaining cube
+        is reset to its current tilt angle. Essentially, this method shows the maximum tilt angle
+        the tower has experienced after the last cube was removed.
+
+        In order to get a precise result, you need to wait some time after the removal of a cube
+        before checking the value returned by this method. If the tower has fallen, the value returned
+        will be inaccurate and should be disregarded.
+
+        Returns:
+            float: The average of the maximum tilt angles.
+        """
+
+        command = "get_average_max_tilt_angle"
+        response = self.send_command(command)
+        return float(response)
+
     def is_fallen(self):
         """
         Check if the Jenga tower has fallen.
@@ -255,7 +277,8 @@ def main():
             print("6: Set Screenshot Resolution")
             print("7: Set Collider Distance")
             print("8: Get Number of Blocks in Level")
-            print("9: Exit")
+            print("9: Get Average Max Tilt Angle")
+            print("10: Exit")
 
             choice = input("Enter the number of your choice: ").strip()
 
@@ -324,6 +347,11 @@ def main():
                     print("Invalid level value.")
 
             elif choice == "9":
+                print("Getting average max tilt angle...")
+                average_tilt_angle = env.get_average_max_tilt_angle()
+                print(f"Average max tilt angle: {average_tilt_angle}")
+
+            elif choice == "10":
                 print("Exiting...")
                 break
 
