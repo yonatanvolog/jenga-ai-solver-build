@@ -48,7 +48,7 @@ def preprocess_image(image):
     return preprocess(image).unsqueeze(0)  # Add batch dimension
 
 
-def calculate_reward(action, is_fallen, previous_stability, env):
+def calculate_reward(action, is_fallen, previous_stability, current_stability):
     """
     Calculates the reward for the agent's action.
 
@@ -56,7 +56,7 @@ def calculate_reward(action, is_fallen, previous_stability, env):
         action (tuple): The action taken by the agent, including the level and color.
         is_fallen (bool): Whether the tower fell after the action.
         previous_stability (float): Stability before the move.
-        env (Environment): The environment in which the action happened.
+        current_stability (float): Stability after the move.
 
     Returns:
         int: The calculated reward, including a penalty if the tower fell.
@@ -67,7 +67,6 @@ def calculate_reward(action, is_fallen, previous_stability, env):
     base_reward = level + (1 if color == "b" else 0)
 
     # Penalty for making the tower more unstable (greater tilt angle)
-    current_stability = env.get_average_max_tilt_angle()
     stability_penalty = previous_stability - current_stability if previous_stability else -current_stability
 
     # Penalty if the tower has fallen
@@ -76,7 +75,7 @@ def calculate_reward(action, is_fallen, previous_stability, env):
     # Combine the rewards and penalties
     reward = base_reward + stability_penalty + fall_penalty
 
-    return reward, current_stability
+    return reward
 
 
 def update_epsilon(agent, efficiency_threshold, move_count):
@@ -269,11 +268,13 @@ def _make_move(agent, env, state, taken_actions, batch_size, previous_action=Non
         print("No action to take. Ending the episode")
         return
 
+    current_stability = env.get_average_max_tilt_angle()
+
     next_state, is_fallen = env.step((action[0], INT_TO_COLOR[action[1]]))
     next_state = preprocess_image(load_image(next_state))
 
     if previous_action is None:
-        reward, current_stability = calculate_reward(action, is_fallen, previous_stability, env)
+        reward = calculate_reward(action, is_fallen, previous_stability, current_stability)
         agent.memory.push(state, action, reward, next_state, is_fallen)
         agent.optimize_model(batch_size)
 
