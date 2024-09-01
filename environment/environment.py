@@ -2,8 +2,6 @@ import socket
 import os
 import time
 import subprocess
-import atexit
-import signal
 from enum import Enum
 
 
@@ -217,6 +215,8 @@ class Environment:
 
         command = "get_average_max_tilt_angle"
         response = self.send_command(command)
+        while not response:
+            response = self.send_command(command)
         return float(response)
 
     def is_fallen(self):
@@ -234,7 +234,7 @@ class Environment:
         return response.lower() == "true"
 
     @staticmethod
-    def get_screenshot(retry_attempts=3, retry_delay=0.25):
+    def get_screenshot(wait_time=0.5, retry_attempts=3, retry_delay=0.25):
         """
         Capture a screenshot of the Jenga tower from a 45-degree angle, showing two sides.
 
@@ -246,6 +246,8 @@ class Environment:
         """
         # Directory where screenshots are saved
         screenshot_dir = os.path.join(os.getcwd(), "..\screenshots")
+
+        time.sleep(wait_time)
 
         # Find the only PNG file in the directory
         png_files = [f for f in os.listdir(screenshot_dir) if f.endswith('.png')]

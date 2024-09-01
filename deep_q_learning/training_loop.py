@@ -1,4 +1,5 @@
 import itertools
+import time
 
 import torchvision.transforms as transforms
 from PIL import Image
@@ -6,7 +7,7 @@ from PIL import Image
 from deep_q_learning.adversary import Adversary
 from deep_q_learning.deep_q_agent import HierarchicalDQNAgent
 from deep_q_learning.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
-from environment.environment import Environment
+from environment.environment import Environment, MAX_LEVEL, MAX_BLOCKS_IN_LEVEL
 
 # Mapping from integer to color for Jenga blocks
 INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
@@ -47,23 +48,35 @@ def preprocess_image(image):
     return preprocess(image).unsqueeze(0)  # Add batch dimension
 
 
-def calculate_reward(action, is_fallen):
+def calculate_reward(action, is_fallen, previous_stability, env):
     """
     Calculates the reward for the agent's action.
 
     Args:
         action (tuple): The action taken by the agent, including the level and color.
         is_fallen (bool): Whether the tower fell after the action.
+        previous_stability (float): Stability before the move.
+        env (Environment): The environment in which the action happened.
 
     Returns:
         int: The calculated reward, including a penalty if the tower fell.
     """
-    reward = action[0] + (1 if action[1] == "b" else 0)  # Reward based on the level of the block removed
+    level, color = action
 
-    if is_fallen:
-        reward = -50  # Apply penalty if the tower falls
+    # Base reward based on the level of the block removed
+    base_reward = level + (1 if color == "b" else 0)
 
-    return reward
+    # Penalty for making the tower more unstable (greater tilt angle)
+    current_stability = env.get_average_max_tilt_angle()
+    stability_penalty = previous_stability - current_stability if previous_stability else -current_stability
+
+    # Penalty if the tower has fallen
+    fall_penalty = -50 if is_fallen else 0
+
+    # Combine the rewards and penalties
+    reward = base_reward + stability_penalty + fall_penalty
+
+    return reward, current_stability
 
 
 def update_epsilon(agent, efficiency_threshold, move_count):
@@ -183,6 +196,7 @@ def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episod
     env.reset()  # Reset the environment for a new episode
     taken_actions = set()  # Reset the made actions
     previous_action = None
+    previous_stability = None
     state = preprocess_image(load_image(env.get_screenshot()))  # Get and preprocess the initial state
     move_count = 0  # Track the number of moves in the current episode
     players = [(agent, "Agent"), (adversary, "Adversary")]
@@ -194,11 +208,12 @@ def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episod
         if adversary:  # If there is an adversary, log whose move it is
             print(f"{role}'s move")
         result = _make_move(player, env, state, taken_actions, batch_size,
-                            previous_action if role == "Adversary" else None)
+                            previous_action if role == "Adversary" else None,
+                            previous_stability)
         if result is None:
             break
 
-        state, previous_action = result
+        state, previous_action, previous_stability = result
 
     # Adjust exploration if the tower fell too quickly
     update_epsilon(agent, efficiency_threshold, move_count)
@@ -207,7 +222,7 @@ def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episod
         agent.update_target_net()
 
 
-def _make_move(agent, env, state, taken_actions, batch_size, previous_action=None):
+def _make_move(agent, env, state, taken_actions, batch_size, previous_action=None, previous_stability=None):
     """
     Executes a move in the Jenga game by either the agent or the adversary.
 
@@ -258,14 +273,15 @@ def _make_move(agent, env, state, taken_actions, batch_size, previous_action=Non
     next_state = preprocess_image(load_image(next_state))
 
     if previous_action is None:
-        agent.memory.push(state, action, calculate_reward(action, is_fallen), next_state, is_fallen)
+        reward, current_stability = calculate_reward(action, is_fallen, previous_stability, env)
+        agent.memory.push(state, action, reward, next_state, is_fallen)
         agent.optimize_model(batch_size)
 
     if is_fallen:  # Stop the episode if the tower has fallen
         print("The tower has fallen. Ending the episode")
         return
 
-    return next_state, action
+    return next_state, action, current_stability
 
 
 if __name__ == "__main__":

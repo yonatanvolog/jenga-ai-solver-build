@@ -11,7 +11,7 @@ from training_loop import training_loop, preprocess_image, load_image
 INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
 
 
-def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=20, batch_size=10, target_update=10):
+def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=15, batch_size=10, target_update=10):
     """
     Trains the agent for increasingly longer numbers of episodes and plots the win rate against each strategy.
 
