@@ -11,7 +11,8 @@ from training_loop import training_loop, preprocess_image, load_image
 INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
 
 
-def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=20, batch_size=10, target_update=10):
+def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=20, batch_size=10, target_update=10,
+                           if_training_against_adversary=False):
     """
     Trains the agent for increasingly longer numbers of episodes and plots the win rate against each strategy.
 
@@ -22,6 +23,8 @@ def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=20, b
         num_tests (int): Number of test episodes to evaluate win rates after training.
         batch_size (int): Batch size for training.
         target_update (int): Number of episodes after which to update the target network.
+        if_training_against_adversary (bool): Specifies if the agent is training against itself (False) or a strategy
+                                              (True).
 
     Returns:
         None
@@ -38,7 +41,7 @@ def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=20, b
             if_load_weights=False if i == 0 else True,
             level_1_path="level_1_plots.pth",
             level_2_path="level_2_plots.pth",
-            if_training_against_adversary=False
+            if_training_against_adversary=if_training_against_adversary
         )
 
         for strategy in strategies:
@@ -68,7 +71,8 @@ def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=20, b
     plt.title('Win Rate vs Number of Training Episodes')
     plt.legend()
     plt.grid(True)
-    plt.savefig("winrate_as_function_of_num_training_episodes_against_itself.png")
+    plt.savefig(f"winrate_as_function_of_num_training_episodes_against_"
+                f"{'itself' if not if_training_against_adversary else 'random'}.png")
 
 
 def evaluate_winrate(agent, strategy, num_tests):
@@ -121,8 +125,26 @@ def evaluate_winrate(agent, strategy, num_tests):
     return win_rate
 
 
-if __name__ == "__main__":
+def plot_1():
+    """
+        Trains the agent against itself, and plots the win rate against the strategies.
+    """
     agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
     strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
     episode_intervals = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
     train_and_plot_winrate(agent, strategies, episode_intervals)
+
+
+def plot_2():
+    """
+        Trains the agent against RandomStrategy, and plots the win rate against the strategies.
+    """
+    agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
+    strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
+    episode_intervals = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+    train_and_plot_winrate(agent, strategies, episode_intervals, if_training_against_adversary=True)
+
+
+if __name__ == "__main__":
+    # plot_1()
+    plot_2()
