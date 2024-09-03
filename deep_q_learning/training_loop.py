@@ -218,13 +218,15 @@ if __name__ == "__main__":
     # Here the agent learns to play against humans and the strategies, to use the resulting weights afterwards
 
     # First phase: the agent trains against an optimistic-strategy adversary
-    training_loop(if_training_against_adversary=True, strategy=OptimisticStrategy())
+    # training_loop(if_load_weights=False, if_training_against_adversary=True, strategy=OptimisticStrategy())
 
     # Second phase: the agent trains against a pessimistic-strategy adversary
-    training_loop(if_training_against_adversary=True, strategy=PessimisticStrategy())
+    # training_loop(if_training_against_adversary=True, strategy=PessimisticStrategy())
 
     # Third phase: the agent trains against the random-strategy adversary
-    training_loop(if_training_against_adversary=True, strategy=RandomStrategy())
+    # training_loop(if_training_against_adversary=True, strategy=RandomStrategy())
 
-    # Last phase: the agent trains against itself, starting from scratch
-    training_loop(if_load_weights=False)
+    # Last phase: the agent trains against itself
+    training_loop(num_episodes=10)
+    training_loop(num_episodes=15)
+    training_loop(num_episodes=20)
