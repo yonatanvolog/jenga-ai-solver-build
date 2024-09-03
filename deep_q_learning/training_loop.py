@@ -1,81 +1,10 @@
 import itertools
-import time
 
-import torchvision.transforms as transforms
-from PIL import Image
-
+import utils
 from deep_q_learning.adversary import Adversary
 from deep_q_learning.deep_q_agent import HierarchicalDQNAgent
 from deep_q_learning.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
-from environment.environment import Environment, MAX_LEVEL, MAX_BLOCKS_IN_LEVEL
-
-# Mapping from integer to color for Jenga blocks
-INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
-
-
-def load_image(filename):
-    """
-    Loads an image from the specified file.
-
-    Args:
-        filename (str): The path to the image file.
-
-    Returns:
-        PIL.Image.Image: The loaded image.
-    """
-    # Open the image file
-    image = Image.open(filename)
-    return image
-
-
-def preprocess_image(image):
-    """
-    Preprocesses the input image by converting it to grayscale, resizing,
-    converting to a tensor, and normalizing it.
-
-    Args:
-        image (PIL.Image.Image): The image to preprocess.
-
-    Returns:
-        torch.Tensor: The preprocessed image as a tensor with a batch dimension.
-    """
-    preprocess = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
-        transforms.Resize((128, 64)),  # Resize to 128x64 pixels
-        transforms.ToTensor(),        # Convert to tensor
-        transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize to [-1, 1]
-    ])
-    return preprocess(image).unsqueeze(0)  # Add batch dimension
-
-
-def calculate_reward(action, is_fallen, previous_stability, current_stability):
-    """
-    Calculates the reward for the agent's action.
-
-    Args:
-        action (tuple): The action taken by the agent, including the level and color.
-        is_fallen (bool): Whether the tower fell after the action.
-        previous_stability (float): Stability before the move.
-        current_stability (float): Stability after the move.
-
-    Returns:
-        int: The calculated reward, including a penalty if the tower fell.
-    """
-    level, color = action
-
-    # Base reward based on the level of the block removed
-    base_reward = level + (1 if color == "b" else 0)
-
-    # Penalty for making the tower more unstable (greater tilt angle)
-    stability_penalty = previous_stability - current_stability if previous_stability else -current_stability
-
-    # Penalty if the tower has fallen
-    fall_penalty = -50 if is_fallen else 0
-
-    # Combine the rewards and penalties
-    reward = base_reward + stability_penalty + fall_penalty
-
-    return reward
+from environment.environment import Environment
 
 
 def update_epsilon(agent, efficiency_threshold, move_count):
@@ -196,7 +125,7 @@ def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episod
     taken_actions = set()  # Reset the made actions
     previous_action = None
     previous_stability = None
-    state = preprocess_image(load_image(env.get_screenshot()))  # Get and preprocess the initial state
+    state = utils.get_state_from_image(env.get_screenshot())  # Get and preprocess the initial state
     move_count = 0  # Track the number of moves in the current episode
     players = [(agent, "Agent"), (adversary, "Adversary")]
 
@@ -270,11 +199,11 @@ def _make_move(agent, env, state, taken_actions, batch_size, previous_action=Non
 
     current_stability = env.get_average_max_tilt_angle()
 
-    next_state, is_fallen = env.step((action[0], INT_TO_COLOR[action[1]]))
-    next_state = preprocess_image(load_image(next_state))
+    screenshot_filename, is_fallen = env.step((action[0], utils.INT_TO_COLOR[action[1]]))
+    next_state = utils.get_state_from_image(screenshot_filename)
 
     if previous_action is None:
-        reward = calculate_reward(action, is_fallen, previous_stability, current_stability)
+        reward = utils.calculate_reward(action, is_fallen, previous_stability, current_stability)
         agent.memory.push(state, action, reward, next_state, is_fallen)
         agent.optimize_model(batch_size)
 
@@ -286,14 +215,16 @@ def _make_move(agent, env, state, taken_actions, batch_size, previous_action=Non
 
 
 if __name__ == "__main__":
-    # First phase: the agent trains against itself, starting from scratch
-    # training_loop(if_load_weights=False)
+    # Here the agent learns to play against humans and the strategies, to use the resulting weights afterwards
 
-    # Second phase: the agent trains against the random-strategy adversary
-    training_loop(if_training_against_adversary=True, strategy=RandomStrategy())
+    # First phase: the agent trains against an optimistic-strategy adversary
+    training_loop(if_training_against_adversary=True, strategy=OptimisticStrategy())
 
-    # Third phase: the agent trains against a pessimistic-strategy adversary
+    # Second phase: the agent trains against a pessimistic-strategy adversary
     training_loop(if_training_against_adversary=True, strategy=PessimisticStrategy())
 
-    # Fourth phase: the agent trains against an optimistic-strategy adversary
-    training_loop(if_training_against_adversary=True, strategy=OptimisticStrategy())
+    # Third phase: the agent trains against the random-strategy adversary
+    training_loop(if_training_against_adversary=True, strategy=RandomStrategy())
+
+    # Last phase: the agent trains against itself, starting from scratch
+    training_loop(if_load_weights=False)

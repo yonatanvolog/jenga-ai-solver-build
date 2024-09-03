@@ -1,3 +1,6 @@
+import random
+
+import utils
 from deep_q_learning.strategy import RandomStrategy
 from environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL
 
@@ -55,7 +58,7 @@ class Adversary:
 
         possible_action = self.strategy.select_action(state, previous_action)
         if possible_action in taken_actions:
-            possible_action = self.strategy.select_action(state)
+            possible_action = random.choice(utils.get_possible_actions(taken_actions))
 
         taken_actions.add(possible_action)
         return possible_action

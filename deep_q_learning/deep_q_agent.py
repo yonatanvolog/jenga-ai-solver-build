@@ -3,6 +3,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import optim
+
+import utils
 from deep_q_learning.deep_q_network import DQN, ReplayMemory
 from environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL
 
@@ -131,12 +133,11 @@ class HierarchicalDQNAgent:
         self.epsilon = self.epsilon_end + (self.epsilon - self.epsilon_end) * \
             np.exp(-1. * self.steps_done / self.epsilon_decay)
 
-        # Choose action based on epsilon-greedy policy
-        possible_actions = list({(level, color) for level in range(MAX_LEVEL)
-                                for color in range(MAX_BLOCKS_IN_LEVEL)} - taken_actions)
+        possible_actions = utils.get_possible_actions(taken_actions)
         if len(possible_actions) == 0:  # If no free actions, return None
             return
 
+        # Choose action based on epsilon-greedy policy
         if random.random() > self.epsilon:
             # Exploitation: Select the best action that hasn't been taken yet
             best_q_value = float('-inf')
