@@ -266,7 +266,7 @@ class Environment:
             This method deletes any previous screenshot in the folder before saving the new one.
         """
         # Directory where screenshots are saved
-        screenshot_dir = os.path.join(os.getcwd(), "..\screenshots")
+        screenshot_dir = os.path.join(os.getcwd(), ".\screenshots")
 
         time.sleep(wait_time)
 
