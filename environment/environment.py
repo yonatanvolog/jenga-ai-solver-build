@@ -21,7 +21,8 @@ class CommandType(Enum):
     SETSCREENSHOTRES = "set_screenshot_res"
     SETCOLLIDERDISTANCE = "set_fall_detect_distance"
     GETNUMOFBLOCKSINLEVEL = "get_num_of_blocks_in_level"
-    GETAVERAGEMAXTILTANGLE = "get_average_max_tilt_angle"  # Added new command
+    GETAVERAGEMAXTILTANGLE = "get_average_max_tilt_angle"
+    REVERTSTEP = "revert_step"  # Added new command
     UNKNOWN = "unknown"
 
 
@@ -32,6 +33,7 @@ class Environment:
         self.port = port
         self.unity_exe_path = unity_exe_path
         self.unity_process = None
+        self.last_action = None  # To store the last action for reverting
 
         if self.unity_exe_path:
             try:
@@ -84,6 +86,7 @@ class Environment:
     def reset(self):
         """Reset the Jenga game immediately."""
         response = self.send_command("reset")
+        self.last_action = None  # Resetting, so clear the last action
         return response
 
     def step(self, action, wait_time=0.5):
@@ -100,6 +103,7 @@ class Environment:
         level, color = action
         command = f"remove {level} {color}"
         self.send_command(command)
+        self.last_action = action  # Store the last action for possible reverting
 
         # Check if the tower has fallen
         time.sleep(0.1)
@@ -109,6 +113,24 @@ class Environment:
         time.sleep(wait_time)
         screenshot = self.get_screenshot()
         return screenshot, is_fallen
+
+    def revert_step(self):
+        """
+        Revert the last action performed by the step method.
+
+        This command returns the environment to the same condition it was before the last call to the "step" method.
+
+        Returns:
+            str: A confirmation message that the step has been reverted.
+        """
+        if self.last_action:
+            level, color = self.last_action
+            command = f"revert_step {level} {color}"
+            response = self.send_command(command)
+            self.last_action = None  # Clear the last action since we've reverted it
+            return response
+        else:
+            return "No step to revert."
 
     def set_timescale(self, timescale):
         """
@@ -212,7 +234,6 @@ class Environment:
         Returns:
             float: The average of the maximum tilt angles.
         """
-
         command = "get_average_max_tilt_angle"
         response = self.send_command(command)
         while not response:
@@ -280,7 +301,8 @@ def main():
             print("7: Set Collider Distance")
             print("8: Get Number of Blocks in Level")
             print("9: Get Average Max Tilt Angle")
-            print("10: Exit")
+            print("10: Revert Last Step")
+            print("11: Exit")
 
             choice = input("Enter the number of your choice: ").strip()
 
@@ -354,6 +376,11 @@ def main():
                 print(f"Average max tilt angle: {average_tilt_angle}")
 
             elif choice == "10":
+                print("Reverting last step...")
+                response = env.revert_step()
+                print(response)
+
+            elif choice == "11":
                 print("Exiting...")
                 break
 
