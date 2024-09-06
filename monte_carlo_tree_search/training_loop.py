@@ -6,8 +6,9 @@ from monte_carlo_tree_search.mcts_agent import MCTSAgent
 from utils import get_state_from_image
 
 
-def mcts_training_loop(num_episodes=50, agent_simulations=1000, exploration_weight=1.0, if_training_against_adversary=False,
-                       strategy=RandomStrategy(), efficiency_threshold=10):
+def mcts_training_loop(num_episodes=50, agent_simulations=1000, exploration_weight=1.0,
+                       if_training_against_adversary=False, strategy=RandomStrategy(), efficiency_threshold=10,
+                       tree_save_path="mcts_tree.pkl"):
     """
     Runs the training loop for the MCTSAgent in a Jenga environment.
 
@@ -22,11 +23,12 @@ def mcts_training_loop(num_episodes=50, agent_simulations=1000, exploration_weig
         strategy (Strategy): Strategy for the adversary to take.
         efficiency_threshold (int): The minimum number of moves before the tower falls to consider the strategy
                                     efficient.
+        tree_save_path (str): The file path to save the MCTS tree.
     """
     print("Starting a new MCTS training loop")
 
     env = Environment()
-    mcts_agent = MCTSAgent(env, num_simulations=agent_simulations, exploration_weight=exploration_weight)
+    mcts_agent = MCTSAgent(env, exploration_weight=exploration_weight, tree_save_path=tree_save_path)
 
     adversary = None
     if if_training_against_adversary:
@@ -63,6 +65,9 @@ def mcts_training_loop(num_episodes=50, agent_simulations=1000, exploration_weig
             if is_fallen:
                 print("The tower has fallen. Ending the episode")
                 break
+
+        # Save the tree after each episode
+        mcts_agent.save_tree()
 
         # Adjust exploration if the tower fell too quickly
         if move_count < efficiency_threshold:

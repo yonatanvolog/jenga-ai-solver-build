@@ -1,4 +1,5 @@
 import math
+import random
 
 import utils
 
@@ -13,8 +14,10 @@ class MCTSNode:
             parent (MCTSNode, optional): The parent node in the tree. Defaults to None.
             is_fallen (bool, optional): A flag indicating if the tower has fallen. Defaults to False.
             reward (float, optional): The reward obtained from taking the action that led to this state. Defaults to 0.
-            action (tuple, optional): The action that was taken to reach this state, represented as (level, color). Defaults to None.
-            taken_actions (set, optional): A set of actions that have already been taken in the game up to this point. Defaults to an empty set.
+            action (tuple, optional): The action that was taken to reach this state, represented as (level, color).
+                                      Defaults to None.
+            taken_actions (set, optional): A set of actions that have already been taken in the game up to this point.
+                                           Defaults to an empty set.
         """
         self.state = state  # The state of the Jenga game
         self.parent = parent  # The parent node in the tree
@@ -41,16 +44,21 @@ class MCTSNode:
         Returns:
             None
         """
-        if self.is_fallen:
+        if self.is_fallen or self.children:
+            # Stop expansion if the node has already expanded or the tower has fallen
             return
         previous_stability = env.get_average_max_tilt_angle()
-        for action in self.possible_actions:
+        for action in random.sample(self.possible_actions, min(len(self.possible_actions), 10)):
+            print(f"Trying action {action}")
             screenshot_filename, is_fallen = env.step(action)
+            current_stability = env.get_average_max_tilt_angle()
             next_state = utils.get_state_from_image(screenshot_filename)
-            reward = utils.calculate_reward(action, is_fallen, previous_stability, env.get_average_max_tilt_angle())
+
+            env.revert_step()
+
+            reward = utils.calculate_reward(action, is_fallen, previous_stability, current_stability)
             child_node = MCTSNode(next_state, self, is_fallen, reward, action, self.taken_actions.union({action}))
             self.children.append(child_node)
-            env.revert_step()
 
     def backpropagate(self):
         """
