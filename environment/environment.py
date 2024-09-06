@@ -22,7 +22,8 @@ class CommandType(Enum):
     SETCOLLIDERDISTANCE = "set_fall_detect_distance"
     GETNUMOFBLOCKSINLEVEL = "get_num_of_blocks_in_level"
     GETAVERAGEMAXTILTANGLE = "get_average_max_tilt_angle"
-    REVERTSTEP = "revert_step"  # Added new command
+    GETMOSTMAXTILTANGLE = "get_most_max_tilt_angle"  # Added new command
+    REVERTSTEP = "revert_step"
     UNKNOWN = "unknown"
 
 
@@ -39,8 +40,7 @@ class Environment:
             try:
                 self.start_unity()
             except FileNotFoundError:
-                print(f"Warning: Unity executable not found at {self.unity_exe_path}. Continuing without launching "
-                      f"Unity.")
+                print(f"Warning: Unity executable not found at {self.unity_exe_path}. Continuing without launching Unity.")
 
     def __enter__(self):
         """Context management entry point."""
@@ -230,11 +230,21 @@ class Environment:
         In order to get a precise result, you need to wait some time after the removal of a cube
         before checking the value returned by this method. If the tower has fallen, the value returned
         will be inaccurate and should be disregarded.
-
-        Returns:
-            float: The average of the maximum tilt angles.
         """
         command = "get_average_max_tilt_angle"
+        response = self.send_command(command)
+        while not response:
+            response = self.send_command(command)
+        return float(response)
+
+    def get_most_max_tilt_angle(self):
+        """
+        Get the maximum tilt angle recorded among all cubes in the Jenga tower.
+
+        Returns:
+            float: The maximum tilt angle.
+        """
+        command = "get_most_max_tilt_angle"
         response = self.send_command(command)
         while not response:
             response = self.send_command(command)
@@ -301,8 +311,9 @@ def main():
             print("7: Set Collider Distance")
             print("8: Get Number of Blocks in Level")
             print("9: Get Average Max Tilt Angle")
-            print("10: Revert Last Step")
-            print("11: Exit")
+            print("10: Get Most Max Tilt Angle")  # Added menu item for new command
+            print("11: Revert Last Step")
+            print("12: Exit")
 
             choice = input("Enter the number of your choice: ").strip()
 
@@ -314,15 +325,13 @@ def main():
             elif choice == "2":
                 level = input("Enter the level number: ").strip()
                 color = input("Enter the color (y, b, g): ").strip()
-                wait_time = input(
-                    "Enter the wait time in seconds (default is 0.5): ").strip()
+                wait_time = input("Enter the wait time in seconds (default is 0.5): ").strip()
                 if wait_time:
                     wait_time = float(wait_time)
                 else:
                     wait_time = 0.5
                 action = (level, color)
-                print(
-                    f"Performing action: remove piece at level {level}, color {color}...")
+                print(f"Performing action: remove piece at level {level}, color {color}...")
                 screenshot, is_fallen = env.step(action, wait_time)
                 print(f"Action performed. Screenshot saved at: {screenshot}")
                 print(f"Has the tower fallen? {'Yes' if is_fallen else 'No'}")
@@ -340,8 +349,7 @@ def main():
                 print("Static friction set.")
 
             elif choice == "5":
-                dynamic_friction = input(
-                    "Enter the dynamic friction value: ").strip()
+                dynamic_friction = input("Enter the dynamic friction value: ").strip()
                 print(f"Setting dynamic friction to {dynamic_friction}...")
                 env.set_dynamic_friction(float(dynamic_friction))
                 print("Dynamic friction set.")
@@ -376,11 +384,16 @@ def main():
                 print(f"Average max tilt angle: {average_tilt_angle}")
 
             elif choice == "10":
+                print("Getting most max tilt angle...")  # Handle the new menu option
+                most_max_tilt_angle = env.get_most_max_tilt_angle()
+                print(f"Most max tilt angle: {most_max_tilt_angle}")
+
+            elif choice == "11":
                 print("Reverting last step...")
                 response = env.revert_step()
                 print(response)
 
-            elif choice == "11":
+            elif choice == "12":
                 print("Exiting...")
                 break
 
