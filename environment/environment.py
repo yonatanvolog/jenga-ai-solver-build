@@ -108,7 +108,7 @@ class Environment:
         self.last_action = action  # Store the last action for possible reverting
 
         # Check if the tower has fallen
-        time.sleep(0.25)
+        time.sleep(wait_time)
         is_fallen = self.is_fallen()
 
         # Retrieve the screenshot after performing the action

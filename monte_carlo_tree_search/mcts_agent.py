@@ -39,6 +39,7 @@ class MCTSAgent:
             # Simulate the action
             _, is_fallen = self.env.step((action[0], utils.INT_TO_COLOR[action[1]]))
             if is_fallen:
+                print("The tower is fallen while in simulation. Reverting")
                 self.env.revert_step()
                 continue
 
