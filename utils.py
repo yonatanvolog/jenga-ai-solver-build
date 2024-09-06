@@ -96,12 +96,9 @@ def calculate_reward(action, is_fallen, previous_stability, current_stability):
     base_reward = level + (1 if color == "b" else 0)
 
     # Penalty for making the tower more unstable (greater tilt angle)
-    stability_penalty = previous_stability - current_stability if previous_stability else -current_stability
-
-    # Penalty if the tower has fallen
-    fall_penalty = -50 if is_fallen else 0
+    stability_penalty = (previous_stability - current_stability if previous_stability else -current_stability) * 10
 
     # Combine the rewards and penalties
-    reward = base_reward + stability_penalty + fall_penalty
+    reward = max(base_reward + stability_penalty, -50)
 
     return reward

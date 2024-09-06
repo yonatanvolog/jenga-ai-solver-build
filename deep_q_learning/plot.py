@@ -1,14 +1,13 @@
 import itertools
 
 import matplotlib.pyplot as plt
-from deep_q_learning.adversary import Adversary
-from deep_q_learning.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
+
+import utils
+from adversary.adversary import Adversary
+from adversary.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
 from deep_q_learning.deep_q_agent import HierarchicalDQNAgent
 from environment.environment import Environment
-from training_loop import training_loop, preprocess_image, load_image
-
-# Mapping from integer to color for Jenga blocks
-INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
+from training_loop import training_loop
 
 
 def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=20, batch_size=10, target_update=10,
@@ -92,7 +91,7 @@ def evaluate_winrate(agent, strategy, num_tests):
     env = Environment()
 
     for _ in range(num_tests):
-        state = preprocess_image(load_image(env.get_screenshot()))
+        state = utils.get_state_from_image(env.get_screenshot())
         env.reset()
         taken_actions = set()  # Reset the actions taken
 
@@ -102,8 +101,8 @@ def evaluate_winrate(agent, strategy, num_tests):
             if agent_action is None:
                 break
 
-            next_state, is_fallen = env.step((agent_action[0], INT_TO_COLOR[agent_action[1]]))
-            state = preprocess_image(load_image(next_state))
+            screenshot_filename, is_fallen = env.step((agent_action[0], utils.INT_TO_COLOR[agent_action[1]]))
+            state = utils.get_state_from_image(screenshot_filename)
 
             if is_fallen:
                 wins += 1
@@ -115,8 +114,8 @@ def evaluate_winrate(agent, strategy, num_tests):
                 wins += 1
                 break
 
-            next_state, is_fallen = env.step((agent_action[0], INT_TO_COLOR[adversary_action[1]]))
-            state = preprocess_image(load_image(next_state))
+            screenshot_filename, is_fallen = env.step((adversary_action[0], utils.INT_TO_COLOR[adversary_action[1]]))
+            state = utils.get_state_from_image(screenshot_filename)
 
             if is_fallen:
                 break
@@ -141,10 +140,10 @@ def plot_2():
     """
     agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
     strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
-    episode_intervals = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+    episode_intervals = [10, 10, 10, 10, 10, 10]
     train_and_plot_winrate(agent, strategies, episode_intervals, if_training_against_adversary=True)
 
 
 if __name__ == "__main__":
-    # plot_1()
+    plot_1()
     plot_2()

@@ -1,61 +1,59 @@
-import os
-import pickle
-from environment.environment import Environment
-from mcts import MCTS
-from monte_carlo_tree_search.node import MCTSNode
+import random
+import time
+
+import utils
 
 
 class MCTSAgent:
-    def __init__(self, env, exploration_weight=0.5, tree_save_path="mcts_tree.pkl"):
+    def __init__(self, env):
         """
-        Initializes the MCTSAgent with the given environment and parameters.
+        Initializes the MCTSAgent with the given environment.
 
         Args:
             env (Environment): The Jenga game environment.
-            exploration_weight (float, optional): The weight for the exploration term in UCB1. Defaults to 1.0.
-            tree_save_path (str, optional): Path to save or load the MCTS tree. Defaults to "mcts_tree.pkl".
         """
         self.env = env
-        self.exploration_weight = exploration_weight
-        self.tree_save_path = tree_save_path
-        self.root = None
-
-        # # Load the existing tree if it exists
-        # if os.path.exists(self.tree_save_path):
-        #     self.load_tree()
-
-    def save_tree(self):
-        """
-        Saves the current MCTS tree to a file.
-        """
-        with open(self.tree_save_path, 'wb') as f:
-            pickle.dump(self.root, f)
-        print(f"Tree saved to {self.tree_save_path}")
-
-    def load_tree(self):
-        """
-        Loads the MCTS tree from a file.
-        """
-        with open(self.tree_save_path, 'rb') as f:
-            self.root = pickle.load(f)
-        print(f"Tree loaded from {self.tree_save_path}")
 
     def select_action(self, state, taken_actions):
         """
-        Selects an action based on the current state using the MCTS strategy.
+        Selects the action with the maximum immediate reward by evaluating all possible actions from the current state.
 
         Args:
-            state (torch.Tensor): The current state of the environment.
+            state (torch.Tensor): The current state of the environment (not used in this agent, but left for
+                                  compatibility with the DQN agent).
             taken_actions (Set[Tuple[int, int]]): Already performed actions.
 
         Returns:
             tuple: A tuple containing the selected level and color of the block to remove.
         """
-        # If no existing tree, create a new root node
-        if not self.root:
-            self.root = MCTSNode(state, taken_actions=taken_actions)
+        best_action = None
+        best_reward = float('-inf')
 
-        mcts = MCTS(self.env, exploration_weight=self.exploration_weight)
-        best_child = mcts.search(self.root)
-        self.root = best_child  # Set the best child as the new root
-        return best_child.action  # Return the action that led to the best child
+        # Get all possible actions
+        possible_actions = utils.get_possible_actions(taken_actions)
+        previous_stability = self.env.get_average_max_tilt_angle()
+
+        for action in random.sample(possible_actions, min(10, len(possible_actions))):
+            print(f"Simulating action {action}")
+
+            # Simulate the action
+            _, is_fallen = self.env.step((action[0], utils.INT_TO_COLOR[action[1]]))
+            if is_fallen:
+                self.env.revert_step()
+                continue
+
+            # Get current stability after action
+            current_stability = self.env.get_average_max_tilt_angle()
+
+            # Calculate the reward for this action
+            reward = utils.calculate_reward(action, is_fallen, previous_stability, current_stability)
+
+            # Keep track of the best action
+            if reward > best_reward:
+                best_reward = reward
+                best_action = action
+
+            # Revert the action for the next evaluation
+            self.env.revert_step()
+
+        return best_action
