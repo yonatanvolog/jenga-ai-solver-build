@@ -1,9 +1,9 @@
 import itertools
 
 import utils
-from deep_q_learning.adversary import Adversary
+from adversary.adversary import Adversary
 from deep_q_learning.deep_q_agent import HierarchicalDQNAgent
-from deep_q_learning.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
+from adversary.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
 from environment.environment import Environment
 
 
@@ -68,7 +68,6 @@ def training_loop(num_episodes=50, batch_size=10, target_update=10, efficiency_t
     # Initialize the agent and environment
     agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
     env = Environment()
-    env.set_timescale(100)  # Speed up the simulation
 
     # Load model weights if they exist
     if if_load_weights:
@@ -218,13 +217,13 @@ if __name__ == "__main__":
     # Here the agent learns to play against humans and the strategies, to use the resulting weights afterwards
 
     # First phase: the agent trains against an optimistic-strategy adversary
-    # training_loop(if_load_weights=False, if_training_against_adversary=True, strategy=OptimisticStrategy())
+    training_loop(if_load_weights=False, if_training_against_adversary=True, strategy=OptimisticStrategy())
 
     # Second phase: the agent trains against a pessimistic-strategy adversary
-    # training_loop(if_training_against_adversary=True, strategy=PessimisticStrategy())
+    training_loop(if_training_against_adversary=True, strategy=PessimisticStrategy())
 
     # Third phase: the agent trains against the random-strategy adversary
-    # training_loop(if_training_against_adversary=True, strategy=RandomStrategy())
+    training_loop(if_training_against_adversary=True, strategy=RandomStrategy())
 
     # Last phase: the agent trains against itself
     training_loop(num_episodes=10)

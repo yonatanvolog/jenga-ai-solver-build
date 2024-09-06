@@ -42,6 +42,8 @@ class Environment:
             except FileNotFoundError:
                 print(f"Warning: Unity executable not found at {self.unity_exe_path}. Continuing without launching Unity.")
 
+        self.set_timescale(100)  # Speed up the simulation
+
     def __enter__(self):
         """Context management entry point."""
         return self
@@ -106,7 +108,7 @@ class Environment:
         self.last_action = action  # Store the last action for possible reverting
 
         # Check if the tower has fallen
-        time.sleep(0.1)
+        time.sleep(0.25)
         is_fallen = self.is_fallen()
 
         # Retrieve the screenshot after performing the action
@@ -265,7 +267,7 @@ class Environment:
         return response.lower() == "true"
 
     @staticmethod
-    def get_screenshot(wait_time=0.5, retry_attempts=3, retry_delay=0.25):
+    def get_screenshot(wait_time=1, retry_attempts=3, retry_delay=0.25):
         """
         Capture a screenshot of the Jenga tower from a 45-degree angle, showing two sides.
 
@@ -283,7 +285,7 @@ class Environment:
         # Find the only PNG file in the directory
         png_files = [f for f in os.listdir(screenshot_dir) if f.endswith('.png')]
         attempt_count = 1
-        while len(png_files) != 1 and attempt_count < retry_attempts:
+        while len(png_files) < 1 and attempt_count < retry_attempts:
             time.sleep(retry_delay)
             png_files = [f for f in os.listdir(screenshot_dir) if f.endswith('.png')]
             attempt_count += 1
