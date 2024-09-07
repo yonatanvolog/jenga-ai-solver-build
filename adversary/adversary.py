@@ -61,4 +61,5 @@ class Adversary:
             possible_action = random.choice(utils.get_possible_actions(taken_actions))
 
         taken_actions.add(possible_action)
+        print(f"Adversary chose action {possible_action}")
         return possible_action

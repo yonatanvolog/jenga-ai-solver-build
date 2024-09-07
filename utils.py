@@ -111,12 +111,13 @@ def calculate_reward(action, previous_stability, current_stability):
     level, color = action
 
     # Base reward based on the level of the block removed
-    base_reward = level + (1 if color == "b" else 0)
+    base_reward = level
 
     # Penalty for making the tower more unstable (greater tilt angle)
     stability_penalty = (previous_stability - current_stability if previous_stability else -current_stability) * 10
 
     # Combine the rewards and penalties
-    reward = max(base_reward + stability_penalty, -50)
+    reward = max(base_reward + stability_penalty, -20)
+    print(reward)
 
     return reward
