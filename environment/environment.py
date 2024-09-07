@@ -109,7 +109,7 @@ class Environment:
         self.last_action = action  # Store the last action for possible reverting
 
         # Check if the tower has fallen
-        time.sleep(0.25)
+        time.sleep(wait_time)
         is_fallen = self.is_fallen()
 
         # Retrieve the screenshot after performing the action
@@ -298,7 +298,6 @@ class Environment:
             raise FileNotFoundError(
                 "Expected one PNG file in the directory, but found {}".format(
                     len(png_files)))
-
 
 def main():
     unity_exe_path = os.path.join(os.getcwd(), "./jenga-game.exe")
