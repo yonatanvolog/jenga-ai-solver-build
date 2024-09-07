@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch import optim
 
 import utils
-from hierarchical_deep_q_learning.deep_q_network import DQN, ReplayMemory
+from deep_q_network.deep_q_network import DQN, ReplayMemory
 
 
 class HierarchicalDQNAgent:
@@ -160,7 +160,7 @@ class HierarchicalDQNAgent:
 
     def optimize_model(self, batch_size):
         """
-        Optimizes the policy networks based on a batch of experiences from replay memory.
+        Optimizes the policy networks based on a batch of experiences from replay memory using the DQN approach.
 
         Args:
             batch_size (int): The number of experiences to sample from replay memory for training.
@@ -173,31 +173,34 @@ class HierarchicalDQNAgent:
         batch_state, batch_action, batch_reward, batch_next_state, batch_done = zip(*transitions)
 
         # Convert batches to tensors
-        batch_state = torch.cat(batch_state)
-        batch_reward = torch.tensor(batch_reward)
-        batch_next_state = torch.cat(batch_next_state)
-        batch_done = torch.tensor(batch_done, dtype=torch.float32)
+        batch_state = torch.cat(batch_state)  # Shape: (batch_size, input_shape)
+        batch_next_state = torch.cat(batch_next_state)  # Shape: (batch_size, input_shape)
 
-        # Split actions into separate tensors for level and color
+        # Convert rewards and done signals to tensors of shape (batch_size, 1)
+        batch_reward = torch.tensor(batch_reward, dtype=torch.float32).view(batch_size, 1)
+        batch_done = torch.tensor(batch_done, dtype=torch.float32).view(batch_size, 1)
+
+        # Split actions into separate tensors for level and color, and reshape them
         batch_action_level = torch.tensor([action[0] for action in batch_action]).unsqueeze(1)
         batch_action_color = torch.tensor([action[1] for action in batch_action]).unsqueeze(1)
 
-        # Calculate current Q-values for both levels and colors
+        # Get the current Q-values for the actions that were taken
         current_q_values_level_1 = self.policy_net_level_1(batch_state).gather(1, batch_action_level)
-        next_q_values_level_1 = self.target_net_level_1(batch_next_state).max(1)[0].detach()
-
         current_q_values_level_2 = self.policy_net_level_2(batch_state).gather(1, batch_action_color)
-        next_q_values_level_2 = self.target_net_level_2(batch_next_state).max(1)[0].detach()
 
-        # Calculate expected Q-values using the Bellman equation
+        # Compute the target Q-values using the target network and Bellman equation
+        next_q_values_level_1 = self.target_net_level_1(batch_next_state).max(1)[0].detach().unsqueeze(1)
+        next_q_values_level_2 = self.target_net_level_2(batch_next_state).max(1)[0].detach().unsqueeze(1)
+
+        # Bellman equation: expected Q-values for both level and color selections
         expected_q_values_level_1 = (next_q_values_level_1 * self.gamma * (1 - batch_done)) + batch_reward
         expected_q_values_level_2 = (next_q_values_level_2 * self.gamma * (1 - batch_done)) + batch_reward
 
-        # Compute the loss for both levels and colors
-        loss_level_1 = F.mse_loss(current_q_values_level_1, expected_q_values_level_1.unsqueeze(1))
-        loss_level_2 = F.mse_loss(current_q_values_level_2, expected_q_values_level_2.unsqueeze(1))
+        # Compute the loss between current and expected Q-values
+        loss_level_1 = F.mse_loss(current_q_values_level_1, expected_q_values_level_1)
+        loss_level_2 = F.mse_loss(current_q_values_level_2, expected_q_values_level_2)
 
-        # Backpropagate the loss and update the network weights
+        # Zero gradients, backpropagate the loss, and update the network weights
         self.optimizer_level_1.zero_grad()
         self.optimizer_level_2.zero_grad()
         loss_level_1.backward()

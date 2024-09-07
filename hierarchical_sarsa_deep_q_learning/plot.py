@@ -35,7 +35,6 @@ def train_and_plot_winrate(agent, env, strategies, episode_intervals, num_tests=
             env=env,
             num_episodes=episode_intervals[i],
             batch_size=batch_size,
-            target_update=target_update,
             if_load_weights=False if i == 0 else True,
             level_1_path="level_1_plots.pth",
             level_2_path="level_2_plots.pth",

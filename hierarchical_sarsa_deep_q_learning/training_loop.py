@@ -1,5 +1,4 @@
 import itertools
-
 import utils
 from adversary.adversary import Adversary
 from adversary.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
@@ -9,18 +8,18 @@ from hierarchical_sarsa_deep_q_learning.hierarchical_sarsa_agent import Hierarch
 
 def update_epsilon(agent, efficiency_threshold, move_count):
     """
-        Adjusts the epsilon value for the agent's epsilon-greedy policy based on the efficiency of the current strategy.
+    Adjusts the epsilon value for the agent's epsilon-greedy policy based on the efficiency of the current strategy.
 
-        This function modifies the agent's epsilon, which controls the balance between exploration and exploitation.
-        If the number of moves made before the tower falls is below the efficiency threshold, epsilon is increased
-        to promote more exploration in the next episode. Conversely, if the move count meets or exceeds the threshold,
-        epsilon is decreased to encourage exploitation of the current strategy.
+    This function modifies the agent's epsilon, which controls the balance between exploration and exploitation.
+    If the number of moves made before the tower falls is below the efficiency threshold, epsilon is increased
+    to promote more exploration in the next episode. Conversely, if the move count meets or exceeds the threshold,
+    epsilon is decreased to encourage exploitation of the current strategy.
 
-        Args:
-            agent (HierarchicalSARSAAgent): The agent whose epsilon value is being adjusted.
-            efficiency_threshold (int): The minimum number of moves before the tower falls to consider the strategy
-                                        efficient.
-            move_count (int): The number of moves made in the current episode before the tower fell.
+    Args:
+        agent (HierarchicalSARSAAgent): The agent whose epsilon value is being adjusted.
+        efficiency_threshold (int): The minimum number of moves before the tower falls to consider the strategy
+                                    efficient.
+        move_count (int): The number of moves made in the current episode before the tower fell.
     """
     if move_count < efficiency_threshold:
         agent.epsilon = min(1.0, agent.epsilon * 1.1)  # Increase epsilon to promote exploration
@@ -30,7 +29,7 @@ def update_epsilon(agent, efficiency_threshold, move_count):
         print(f"Decreased exploration: epsilon = {agent.epsilon}")
 
 
-def training_loop(agent=None, env=None, num_episodes=50, batch_size=10, target_update=10, efficiency_threshold=10,
+def training_loop(agent=None, env=None, num_episodes=50, batch_size=10, efficiency_threshold=10,
                   if_load_weights=True, level_1_path="level_1.pth", level_2_path="level_2.pth",
                   if_training_against_adversary=False, strategy=RandomStrategy()):
     """
@@ -44,7 +43,6 @@ def training_loop(agent=None, env=None, num_episodes=50, batch_size=10, target_u
         env (Environment): The Jenga environment.
         num_episodes (int): Number of episodes to run.
         batch_size (int): Batch size.
-        target_update (int): Number of episodes after which to update the target network.
         if_load_weights (bool): Whether to load pre-existing model weights if they exist or start from scratch.
         level_1_path (str): Path to the weights of the first DQN.
         level_2_path (str): Path to the weights of the second DQN.
@@ -75,31 +73,30 @@ def training_loop(agent=None, env=None, num_episodes=50, batch_size=10, target_u
         print(f"The agent is training against an adversary with {adversary.__class__.__name__} strategy")
 
     for episode in range(1, num_episodes + 1):
-        _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episode, num_episodes, target_update)
+        _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episode, num_episodes)
 
     # Save model weights at the end of the training session
     agent.save_model(level_1_path, level_2_path)
 
 
-def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episode, num_episodes, target_update):
+def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episode, num_episodes):
     """
-       Runs a single episode of training for the HierarchicalSARSAAgent in the Jenga environment.
+    Runs a single episode of training for the HierarchicalSARSAAgent in the Jenga environment.
 
-       During the episode, the agent (and optionally an adversary) interacts with the environment, selecting actions
-       and optimizing its model based on the results of those actions. The episode continues until the Jenga tower
-       falls, or no more valid actions are available.
+    During the episode, the agent (and optionally an adversary) interacts with the environment, selecting actions
+    and optimizing its model based on the results of those actions. The episode continues until the Jenga tower
+    falls, or no more valid actions are available.
 
-       Args:
-           adversary (Adversary or None): An optional adversary agent that may take turns with the main agent.
-           agent (HierarchicalSARSAgent): The main agent being trained.
-           batch_size (int): The number of experiences to sample from replay memory for training.
-           efficiency_threshold (int): The minimum number of moves before the tower falls to consider the strategy
-                                       efficient.
-           env (Environment): The environment representing the Jenga game.
-           episode (int): The current episode number.
-           num_episodes (int): The total number of episodes in the training session.
-           target_update (int): The frequency (in episodes) at which the target network is updated.
-       """
+    Args:
+        adversary (Adversary or None): An optional adversary agent that may take turns with the main agent.
+        agent (HierarchicalSARSAAgent): The main agent being trained.
+        batch_size (int): The number of experiences to sample from replay memory for training.
+        efficiency_threshold (int): The minimum number of moves before the tower falls to consider the strategy
+                                    efficient.
+        env (Environment): The environment representing the Jenga game.
+        episode (int): The current episode number.
+        num_episodes (int): The total number of episodes in the training session.
+    """
     print(f"Started episode {episode} out of {num_episodes}")
     env.reset()  # Reset the environment for a new episode
     taken_actions = set()  # Reset the made actions
@@ -125,9 +122,6 @@ def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episod
 
     # Adjust exploration if the tower fell too quickly
     update_epsilon(agent, efficiency_threshold, move_count)
-    # Update the target network periodically
-    if episode % target_update == 0:
-        agent.update_target_net()
 
 
 def _make_move(agent, env, state, taken_actions, batch_size, previous_action=None, previous_stability=None):
