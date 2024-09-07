@@ -198,11 +198,11 @@ def _make_move(agent, env, state, taken_actions, batch_size, previous_action=Non
 
     current_stability = env.get_average_max_tilt_angle()
 
-    screenshot_filename, is_fallen = env.step((action[0], utils.INT_TO_COLOR[action[1]]))
+    screenshot_filename, is_fallen = env.step(utils.format_action(action))
     next_state = utils.get_state_from_image(screenshot_filename)
 
     if previous_action is None:
-        reward = utils.calculate_reward(action, is_fallen, previous_stability, current_stability)
+        reward = utils.calculate_reward(action, previous_stability, current_stability)
         agent.memory.push(state, action, reward, next_state, is_fallen)
         agent.optimize_model(batch_size)
 
