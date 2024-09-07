@@ -118,6 +118,5 @@ def calculate_reward(action, previous_stability, current_stability):
 
     # Combine the rewards and penalties
     reward = max(base_reward + stability_penalty, -20)
-    print(reward)
 
     return reward
