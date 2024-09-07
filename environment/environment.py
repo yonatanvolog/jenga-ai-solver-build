@@ -298,6 +298,17 @@ class Environment:
                 "Expected one PNG file in the directory, but found {}".format(
                     len(png_files)))
 
+def test():
+    env = Environment()
+    env.step((11, 'y'))
+    env.step((11, 'b'))
+    env.step((11, 'g'))
+    env.step((1, 'g'))
+    env.step((1, 'b'))
+    env.step((1, 'y'))
+    env.step((2, 'y'))
+    env.step((2, 'y'))
+    env.step((2, 'y'))
 
 def main():
     unity_exe_path = os.path.join(os.getcwd(), "../unity_build/jenga-game.exe")
@@ -404,4 +415,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
+    test()
