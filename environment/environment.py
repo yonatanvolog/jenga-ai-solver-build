@@ -3,7 +3,7 @@ import os
 import time
 import subprocess
 from enum import Enum
-
+from time import sleep
 
 MAX_LEVEL = 12
 MAX_BLOCKS_IN_LEVEL = 3
@@ -300,15 +300,11 @@ class Environment:
 
 def test():
     env = Environment()
-    env.step((11, 'y'))
-    env.step((11, 'b'))
-    env.step((11, 'g'))
-    env.step((1, 'g'))
-    env.step((1, 'b'))
-    env.step((1, 'y'))
-    env.step((2, 'y'))
-    env.step((2, 'y'))
-    env.step((2, 'y'))
+    env.set_timescale(1)
+    for level in range(12):  # Levels from 0 to 11
+        for color in ['y', 'b', 'g']:  # For each color
+            env.step((level, color))
+
 
 def main():
     unity_exe_path = os.path.join(os.getcwd(), "../unity_build/jenga-game.exe")
@@ -415,5 +411,5 @@ def main():
 
 
 if __name__ == "__main__":
-    #main()
-    test()
+    main()
+    #test()
