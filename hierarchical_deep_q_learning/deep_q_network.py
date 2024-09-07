@@ -88,18 +88,13 @@ class DQN(nn.Module):
 
 class ReplayMemory:
     """
-    Replay memory for storing and sampling past experiences in reinforcement learning.
+    Replay memory for storing and sampling experiences in reinforcement learning.
 
     This class uses a deque to store experiences up to a fixed capacity. It allows for
     sampling random mini-batches of experiences to train the DQN.
 
     Args:
         capacity (int): The maximum number of experiences to store.
-
-    Methods:
-        push(state, action, reward, next_state, done): Adds a new experience to the memory.
-        sample(batch_size): Samples a random batch of experiences from the memory.
-        __len__(): Returns the current number of experiences stored.
     """
 
     def __init__(self, capacity):
@@ -123,6 +118,24 @@ class ReplayMemory:
             done (bool): Whether the episode has ended.
         """
         self.memory.append((state, action, reward, next_state, done))
+
+    def sarsa_push(self, state, action, reward, next_state, next_action, done):
+        """
+        Adds a new experience to the replay memory for SARSA (State-Action-Reward-State-Action) updates.
+
+        This function stores also the predicted next action chosen in the next state, and whether the episode has
+        ended. This is specifically for the SARSA algorithm, which updates the Q-value using the action taken in the
+        next state.
+
+        Args:
+            state (torch.Tensor): The current state observed by the agent.
+            action (int): The action taken by the agent in the current state.
+            reward (float): The reward received after taking the action.
+            next_state (torch.Tensor): The next state observed after taking the action.
+            next_action (int): The next action chosen by the agent in the next state.
+            done (bool): A flag indicating whether the episode has ended (True if the episode is over, False otherwise).
+        """
+        self.memory.append((state, action, reward, next_state, next_action, done))
 
     def sample(self, batch_size):
         """

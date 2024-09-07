@@ -1,12 +1,10 @@
 import itertools
 import random
-
 import matplotlib.pyplot as plt
-
 import utils
 from adversary.adversary import Adversary
 from adversary.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
-from hierarchical_deep_q_learning.hierarchical_deep_q_agent import HierarchicalDQNAgent
+from hierarchical_sarsa_agent import HierarchicalSARSAAgent  # Import SARSA Agent
 from environment.environment import Environment
 from training_loop import training_loop
 
@@ -14,10 +12,10 @@ from training_loop import training_loop
 def train_and_plot_winrate(agent, env, strategies, episode_intervals, num_tests=20, batch_size=10, target_update=10,
                            if_training_against_adversary=False):
     """
-    Trains the agent for increasingly longer numbers of episodes and plots the win rate against each strategy.
+    Trains the SARSA agent for increasingly longer numbers of episodes and plots the win rate against each strategy.
 
     Args:
-        agent (HierarchicalDQNAgent): The agent to be trained.
+        agent (HierarchicalSARSAAgent): The SARSA agent to be trained.
         env (Environment): Jenga environment.
         strategies (list): A list of strategies to train and evaluate against.
         episode_intervals (list): A list of episode counts to train the agent on.
@@ -30,8 +28,8 @@ def train_and_plot_winrate(agent, env, strategies, episode_intervals, num_tests=
     win_rates = {strategy.__class__.__name__: [] for strategy in strategies}
 
     for i in range(len(episode_intervals)):
-        # Train the agent against itself
-        print(f"Training for {episode_intervals[i]} episodes against itself...")
+        # Train the agent using SARSA
+        print(f"Training for {episode_intervals[i]} episodes...")
         training_loop(
             agent=agent,
             env=env,
@@ -72,16 +70,16 @@ def train_and_plot_winrate(agent, env, strategies, episode_intervals, num_tests=
               f"{'Itself' if not if_training_against_adversary else 'Random Strategy'}")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f"dqn_winrate_as_function_of_num_training_episodes_against_"
+    plt.savefig(f"sarsa_winrate_as_function_of_num_training_episodes_against_"
                 f"{'itself' if not if_training_against_adversary else 'random'}.png")
 
 
 def evaluate_winrate(agent, env, strategy, num_tests):
     """
-    Evaluates the win rate of the agent against a specific strategy.
+    Evaluates the win rate of the SARSA agent against a specific strategy.
 
     Args:
-        agent (HierarchicalDQNAgent): The agent to be tested.
+        agent (HierarchicalSARSAAgent): The SARSA agent to be tested.
         env (Environment): Jenga environment.
         strategy (Strategy): The adversary strategy to evaluate against.
         num_tests (int): Number of test episodes.
@@ -121,7 +119,7 @@ def evaluate_winrate(agent, env, strategy, num_tests):
             if is_fallen:
                 if not if_first_player_is_agent:
                     wins += 1
-                print("The tower is fallen. Stopping this game")
+                print("The tower has fallen. Stopping this game")
                 break
             state = utils.get_state_from_image(screenshot_filename)
             taken_actions.add(previous_action)
@@ -139,7 +137,7 @@ def evaluate_winrate(agent, env, strategy, num_tests):
             if is_fallen:
                 if if_first_player_is_agent:
                     wins += 1
-                print("The tower is fallen. Stopping this game")
+                print("The tower has fallen. Stopping this game")
                 break
             state = utils.get_state_from_image(screenshot_filename)
             taken_actions.add(previous_action)
@@ -150,9 +148,9 @@ def evaluate_winrate(agent, env, strategy, num_tests):
 
 def plot_1(env):
     """
-        Trains the agent against itself, and plots the win rate against the strategies.
+    Trains the SARSA agent against itself and plots the win rate against the strategies.
     """
-    agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
+    agent = HierarchicalSARSAAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
     strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
     episode_intervals = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
     train_and_plot_winrate(agent, env, strategies, episode_intervals)
@@ -160,9 +158,9 @@ def plot_1(env):
 
 def plot_2(env):
     """
-        Trains the agent against RandomStrategy, and plots the win rate against the strategies.
+    Trains the SARSA agent against RandomStrategy and plots the win rate against the strategies.
     """
-    agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
+    agent = HierarchicalSARSAAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
     strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
     episode_intervals = [10, 10, 10, 10, 10, 10]
     train_and_plot_winrate(agent, env, strategies, episode_intervals, if_training_against_adversary=True)
