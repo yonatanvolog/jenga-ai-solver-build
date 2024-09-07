@@ -80,12 +80,14 @@ def evaluate_winrate(agent, strategy, num_games):
             # MCTS Agent's turn
             agent_action = agent.select_action(state, taken_actions)
             if agent_action is None:
+                print("No actions to take. Stopping this game")
                 break
             print(f"Agent chose action {agent_action}")
 
             screenshot_filename, is_fallen = env.step((agent_action[0], utils.INT_TO_COLOR[agent_action[1]]))
             if is_fallen:
                 wins += 1
+                print("The tower is fallen. Stopping this game")
                 break
             state = utils.get_state_from_image(screenshot_filename)
             taken_actions.add(agent_action)
@@ -94,11 +96,13 @@ def evaluate_winrate(agent, strategy, num_games):
             adversary_action = adversary.select_action(state, taken_actions, agent_action)
             if adversary_action is None:
                 wins += 1
+                print("No actions to take. Stopping this game")
                 break
             print(f"Adversary chose action {adversary_action}")
 
             screenshot_filename, is_fallen = env.step((adversary_action[0], utils.INT_TO_COLOR[adversary_action[1]]))
             if is_fallen:
+                print("The tower is fallen. Stopping this game")
                 break
             state = utils.get_state_from_image(screenshot_filename)
             taken_actions.add(adversary_action)
