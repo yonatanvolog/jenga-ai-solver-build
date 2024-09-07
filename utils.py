@@ -77,13 +77,31 @@ def get_possible_actions(taken_actions=set()):
     return list({(level, color) for level in range(MAX_LEVEL) for color in range(MAX_BLOCKS_IN_LEVEL)} - taken_actions)
 
 
-def calculate_reward(action, is_fallen, previous_stability, current_stability):
+def format_action(action):
+    """
+    Formats the given action by converting the block's color from its integer representation
+    to its corresponding string representation.
+
+    Args:
+        action (tuple): A tuple representing the action to take in the Jenga game. The action is a
+                        tuple of the form (level, color), where `level` is an integer representing
+                        the level of the block in the Jenga tower, and `color` is an integer
+                        representing the color of the block (0 for yellow, 1 for blue, 2 for green).
+
+    Returns:
+        tuple: A formatted tuple representing the action in the form (level, color), where `level`
+               is the same integer as the input, and `color` is the string representation of the block color
+               ('y', 'b', or 'g').
+    """
+    return action[0], INT_TO_COLOR[action[1]]
+
+
+def calculate_reward(action, previous_stability, current_stability):
     """
     Calculates the reward for the agent's action.
 
     Args:
         action (tuple): The action taken by the agent, including the level and color.
-        is_fallen (bool): Whether the tower fell after the action.
         previous_stability (float): Stability before the move.
         current_stability (float): Stability after the move.
 

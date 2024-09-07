@@ -6,7 +6,6 @@ from torch import optim
 
 import utils
 from deep_q_learning.deep_q_network import DQN, ReplayMemory
-from environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL
 
 
 class HierarchicalDQNAgent:

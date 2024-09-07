@@ -28,7 +28,7 @@ class CommandType(Enum):
 
 
 class Environment:
-    def __init__(self, host="127.0.0.1", port=25001, unity_exe_path=None):
+    def __init__(self, host="127.0.0.1", port=25001, unity_exe_path="../environment/jenga-game.exe"):
         """Initialize the Environment with the host, port, and path to the Unity executable."""
         self.host = host
         self.port = port
@@ -40,7 +40,8 @@ class Environment:
             try:
                 self.start_unity()
             except FileNotFoundError:
-                print(f"Warning: Unity executable not found at {self.unity_exe_path}. Continuing without launching Unity.")
+                print(f"Warning: Unity executable not found at {self.unity_exe_path}. Continuing without launching "
+                      f"Unity.")
 
         self.set_timescale(100)  # Speed up the simulation
 
@@ -300,7 +301,7 @@ class Environment:
 
 
 def main():
-    unity_exe_path = os.path.join(os.getcwd(), "../unity_build/jenga-game.exe")
+    unity_exe_path = os.path.join(os.getcwd(), "./jenga-game.exe")
     with Environment(unity_exe_path=unity_exe_path) as env:
         while True:
             print("\nWhat action would you like to do?")

@@ -10,13 +10,14 @@ from environment.environment import Environment
 from training_loop import training_loop
 
 
-def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=20, batch_size=10, target_update=10,
+def train_and_plot_winrate(agent, env, strategies, episode_intervals, num_tests=20, batch_size=10, target_update=10,
                            if_training_against_adversary=False):
     """
     Trains the agent for increasingly longer numbers of episodes and plots the win rate against each strategy.
 
     Args:
         agent (HierarchicalDQNAgent): The agent to be trained.
+        env (Environment): Jenga environment.
         strategies (list): A list of strategies to train and evaluate against.
         episode_intervals (list): A list of episode counts to train the agent on.
         num_tests (int): Number of test episodes to evaluate win rates after training.
@@ -46,7 +47,7 @@ def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=20, b
         for strategy in strategies:
             strategy_name = strategy.__class__.__name__
             print(f"Evaluating win rate against {strategy_name}...")
-            win_rate = evaluate_winrate(agent, strategy, num_tests)
+            win_rate = evaluate_winrate(agent, env, strategy, num_tests)
             win_rates[strategy_name].append(win_rate)
             print(f"Win rate against {strategy_name}: {win_rate:.2f}")
 
@@ -67,19 +68,21 @@ def train_and_plot_winrate(agent, strategies, episode_intervals, num_tests=20, b
 
     plt.xlabel('Number of Training Episodes')
     plt.ylabel('Win Rate')
-    plt.title('Win Rate vs Number of Training Episodes')
+    plt.title(f"Win Rate After {num_tests} Games Against Strategies as Function of Number Training Episodes Against "
+              f"{'Itself' if not if_training_against_adversary else 'Random Strategy'}")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f"winrate_as_function_of_num_training_episodes_against_"
+    plt.savefig(f"dqn_winrate_as_function_of_num_training_episodes_against_"
                 f"{'itself' if not if_training_against_adversary else 'random'}.png")
 
 
-def evaluate_winrate(agent, strategy, num_tests):
+def evaluate_winrate(agent, env, strategy, num_tests):
     """
     Evaluates the win rate of the agent against a specific strategy.
 
     Args:
         agent (HierarchicalDQNAgent): The agent to be tested.
+        env (Environment): Jenga environment.
         strategy (Strategy): The adversary strategy to evaluate against.
         num_tests (int): Number of test episodes.
 
@@ -88,37 +91,44 @@ def evaluate_winrate(agent, strategy, num_tests):
     """
     wins = 0
     adversary = Adversary(strategy=strategy)
-    env = Environment()
+    initial_state = utils.get_state_from_image(env.get_screenshot())
 
-    for _ in range(num_tests):
-        state = utils.get_state_from_image(env.get_screenshot())
+    for i in range(1, num_tests + 1):
+        print(f"Starting game {i}")
         env.reset()
         taken_actions = set()  # Reset the actions taken
+        state = initial_state
 
         for _ in itertools.count():
+            # Agent's turn
             agent_action = agent.select_action(state, taken_actions)
-
             if agent_action is None:
+                print("No actions to take. Stopping this game")
                 break
+            print(f"Agent chose action {agent_action}")
 
-            screenshot_filename, is_fallen = env.step((agent_action[0], utils.INT_TO_COLOR[agent_action[1]]))
-            state = utils.get_state_from_image(screenshot_filename)
-
+            screenshot_filename, is_fallen = env.step(utils.format_action(agent_action))
             if is_fallen:
                 wins += 1
+                print("The tower is fallen. Stopping this game")
                 break
+            state = utils.get_state_from_image(screenshot_filename)
+            taken_actions.add(agent_action)
 
+            # Adversary's turn
             adversary_action = adversary.select_action(state, taken_actions, agent_action)
-
             if adversary_action is None:
                 wins += 1
+                print("No actions to take. Stopping this game")
                 break
+            print(f"Adversary chose action {adversary_action}")
 
-            screenshot_filename, is_fallen = env.step((adversary_action[0], utils.INT_TO_COLOR[adversary_action[1]]))
-            state = utils.get_state_from_image(screenshot_filename)
-
+            screenshot_filename, is_fallen = env.step(utils.format_action(adversary_action))
             if is_fallen:
+                print("The tower is fallen. Stopping this game")
                 break
+            state = utils.get_state_from_image(screenshot_filename)
+            taken_actions.add(adversary_action)
 
     win_rate = wins / num_tests
     return win_rate
@@ -129,9 +139,10 @@ def plot_1():
         Trains the agent against itself, and plots the win rate against the strategies.
     """
     agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
+    env = Environment()
     strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
     episode_intervals = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
-    train_and_plot_winrate(agent, strategies, episode_intervals)
+    train_and_plot_winrate(agent, env, strategies, episode_intervals)
 
 
 def plot_2():
@@ -139,9 +150,10 @@ def plot_2():
         Trains the agent against RandomStrategy, and plots the win rate against the strategies.
     """
     agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
+    env = Environment()
     strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
     episode_intervals = [10, 10, 10, 10, 10, 10]
-    train_and_plot_winrate(agent, strategies, episode_intervals, if_training_against_adversary=True)
+    train_and_plot_winrate(agent, env, strategies, episode_intervals, if_training_against_adversary=True)
 
 
 if __name__ == "__main__":

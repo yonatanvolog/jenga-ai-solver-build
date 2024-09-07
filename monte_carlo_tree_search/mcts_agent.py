@@ -37,7 +37,7 @@ class MCTSAgent:
             print(f"Simulating action {action}")
 
             # Simulate the action
-            _, is_fallen = self.env.step((action[0], utils.INT_TO_COLOR[action[1]]))
+            _, is_fallen = self.env.step(utils.format_action(action))
             if is_fallen:
                 print("The tower is fallen while in simulation. Reverting")
                 self.env.revert_step()
@@ -47,7 +47,7 @@ class MCTSAgent:
             current_stability = self.env.get_average_max_tilt_angle()
 
             # Calculate the reward for this action
-            reward = utils.calculate_reward(action, is_fallen, previous_stability, current_stability)
+            reward = utils.calculate_reward(action, previous_stability, current_stability)
 
             # Keep track of the best action
             if reward > best_reward:
