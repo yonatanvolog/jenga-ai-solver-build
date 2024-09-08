@@ -22,11 +22,11 @@ class PlayerType(Enum):
         GSBAS: Represents a player that uses the Greedy Simulation-Based Action Search agent.
         HUMAN: Represents a human player.
     """
-    RANDOM = "Random"
-    DQN = "DQN"
-    SARSA = "SARSA"
-    GSBAS = "GSBAS"
-    HUMAN = "Human"
+    RANDOM = 0
+    DQN = 1
+    SARSA = 2
+    GSBAS = 3
+    HUMAN = 4
 
 
 def player_factory(player_type, env):
@@ -80,6 +80,43 @@ def select_action(player_type, player, state, taken_actions, previous_action):
         return player.select_action(state, taken_actions)
 
 
+def _make_move(player_type, player, state, taken_actions, previous_action, env):
+    """
+    Facilitates making a move for a specified player type, executing the action in the game environment, and updating the state.
+
+    Args:
+        player_type (PlayerType): The type of player executing the move (e.g., AI agent or human).
+        player (object): The player instance making the move, either an AI agent or a human agent.
+        state (torch.Tensor): The current state of the game (e.g., a visual representation of the environment).
+        taken_actions (set): A set of already performed actions, ensuring no duplicate actions.
+        previous_action (tuple): The last action taken in the game, used to track progress.
+        env (Environment): The game environment where actions are executed and game state is updated.
+
+    Returns:
+        Optional[tuple]:
+            - next_state (torch.Tensor): The updated state of the game after performing the action.
+            - action (tuple): The action taken in the current move, represented as (level, color).
+        If no action can be taken or the tower falls, the function returns None.
+    """
+
+    action = select_action(player_type, player, state, taken_actions, previous_action)
+
+    if action is None:
+        return  # End the game if no action can be taken
+
+    # Take the action and get the updated state
+    screenshot_filename, is_fallen = env.step(utils.format_action(previous_action))
+
+    if is_fallen:
+        return  # End the game if the tower has fallen
+
+    # Update the game state and record the action taken
+    next_state = utils.get_state_from_image(screenshot_filename)
+    taken_actions.add(action)
+
+    return next_state, action
+
+
 def play(player_1_type, player_2_type, num_games):
     """
     Simulates a series of games between two players.
@@ -104,20 +141,8 @@ def play(player_1_type, player_2_type, num_games):
         previous_action = None
 
         # Loop through the moves made in the game until completion
-        for _ in itertools.count():
-            # Iterate between player 1 and player 2
-            for player_type, player in [(player_1_type, player_1), (player_2_type, player_2)]:
-                previous_action = select_action(player_type, player, state, taken_actions, previous_action)
-
-                if previous_action is None:
-                    break  # End the game if no action can be taken
-
-                # Take the action and get the updated state
-                screenshot_filename, is_fallen = env.step(utils.format_action(previous_action))
-
-                if is_fallen:
-                    break  # End the game if the tower has fallen
-
-                # Update the game state and record the action taken
-                state = utils.get_state_from_image(screenshot_filename)
-                taken_actions.add(previous_action)
+        for player_type, player in itertools.cycle([(player_1_type, player_1), (player_2_type, player_2)]):
+            result = _make_move(player_type, player, state, taken_actions, previous_action, env)
+            if result is None:
+                break
+            state, previous_action = result
