@@ -3,6 +3,7 @@ import os
 import time
 import subprocess
 from enum import Enum
+import threading
 
 MAX_LEVEL = 12
 MAX_BLOCKS_IN_LEVEL = 3
@@ -28,10 +29,11 @@ class CommandType(Enum):
 
 
 class Environment:
-    def __init__(self, host="127.0.0.1", port=25001, unity_exe_path="../environment/jenga-game.exe"):
-        """Initialize the Environment with the host, port, and path to the Unity executable."""
+    def __init__(self, host="127.0.0.1", port_receive=25001, port_send=25002, unity_exe_path="../environment/jenga-game.exe"):
+        """Initialize the Environment with the host, port for receiving, port for sending, and path to the Unity executable."""
         self.host = host
-        self.port = port
+        self.port_receive = port_receive
+        self.port_send = port_send
         self.unity_exe_path = unity_exe_path
         self.unity_process = None
         self.last_action = None  # To store the last action for reverting
@@ -40,10 +42,13 @@ class Environment:
             try:
                 self.start_unity()
             except FileNotFoundError:
-                print(f"Warning: Unity executable not found at {self.unity_exe_path}. Continuing without launching "
-                      f"Unity.")
+                print(f"Warning: Unity executable not found at {self.unity_exe_path}. Continuing without launching Unity.")
 
         self.set_timescale(100)  # Speed up the simulation
+
+        # Start listening for incoming Unity commands on a separate thread
+        listener_thread = threading.Thread(target=self.listen_for_commands, daemon=True)
+        listener_thread.start()
 
     def __enter__(self):
         """Context management entry point."""
@@ -76,7 +81,7 @@ class Environment:
         for attempt in range(retry_attempts):
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    sock.connect((self.host, self.port))
+                    sock.connect((self.host, self.port_receive))
                     sock.sendall(command.encode("utf-8"))
                     response = sock.recv(1024).decode("utf-8")
                     return response.strip()
@@ -85,6 +90,25 @@ class Environment:
                 time.sleep(retry_delay)
 
         raise ConnectionError(f"Failed to send command after {retry_attempts} attempts.")
+
+    def listen_for_commands(self):
+        """Listen for incoming commands from Unity and print them."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind((self.host, self.port_send))  # Use the port_send (25002) for receiving commands
+            sock.listen(1)
+            print(f"Listening for incoming Unity commands on port {self.port_send}...")
+            while True:
+                client, addr = sock.accept()
+                with client:
+                    print(f"Connected to Unity at {addr}")
+                    while True:
+                        data = client.recv(1024)
+                        if not data:
+                            break
+                        command = data.decode('utf-8').strip()
+                        print(f"Received command from Unity: {command}")
+                        # Optionally send a response back to Unity
+                        client.sendall(b"Command received")
 
     def reset(self):
         """Reset the Jenga game immediately."""
