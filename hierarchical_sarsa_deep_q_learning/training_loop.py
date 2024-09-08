@@ -166,7 +166,11 @@ def _make_move(agent, env, state, taken_actions, batch_size, previous_action=Non
     next_state = utils.get_state_from_image(screenshot_filename)
 
     # If the tower has not fallen, select the next action (SARSA)
-    next_action = agent.select_action(next_state, taken_actions)
+    print("Selecting the next action and not actually making it for now")
+    if previous_action is None:
+        next_action = agent.select_action(next_state, taken_actions)
+    else:
+        next_action = agent.select_action(next_state, taken_actions, previous_action)
 
     if previous_action is None:
         # Calculate the reward and store the SARSA transition

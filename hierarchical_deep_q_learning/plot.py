@@ -121,7 +121,7 @@ def evaluate_winrate(agent, env, strategy, num_tests):
             if is_fallen:
                 if not if_first_player_is_agent:
                     wins += 1
-                print("The tower is fallen. Stopping this game")
+                print("The tower has fallen. Stopping this game")
                 break
             state = utils.get_state_from_image(screenshot_filename)
             taken_actions.add(previous_action)
@@ -139,7 +139,7 @@ def evaluate_winrate(agent, env, strategy, num_tests):
             if is_fallen:
                 if if_first_player_is_agent:
                     wins += 1
-                print("The tower is fallen. Stopping this game")
+                print("The tower has fallen. Stopping this game")
                 break
             state = utils.get_state_from_image(screenshot_filename)
             taken_actions.add(previous_action)
