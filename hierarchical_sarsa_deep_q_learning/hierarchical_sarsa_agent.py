@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch import optim
 import utils
 from deep_q_network.deep_q_network import DQN, ReplayMemory
+from environment.environment import SCREENSHOT_SHAPE, MAX_LEVEL, MAX_BLOCKS_IN_LEVEL
 
 
 class HierarchicalSARSAAgent:
@@ -16,8 +17,8 @@ class HierarchicalSARSAAgent:
     and updates its Q-values using SARSA.
     """
 
-    def __init__(self, input_shape, num_actions_level_1, num_actions_level_2,
-                 lr=1e-4, gamma=0.99, epsilon_start=1.0, epsilon_end=0.1,
+    def __init__(self, input_shape=SCREENSHOT_SHAPE, num_actions_level_1=MAX_LEVEL,
+                 num_actions_level_2=MAX_BLOCKS_IN_LEVEL, lr=1e-4, gamma=0.99, epsilon_start=1.0, epsilon_end=0.1,
                  epsilon_decay=5000):
         self.gamma = gamma
         self.epsilon = epsilon_start
@@ -67,9 +68,7 @@ class HierarchicalSARSAAgent:
         Returns:
             HierarchicalSARSAAgent: A new instance of HierarchicalSARSAAgent initialized with the same weights.
         """
-        adversary = HierarchicalSARSAAgent(input_shape=(128, 64),
-                                           num_actions_level_1=self.policy_net_level_1.fc2.out_features,
-                                           num_actions_level_2=self.policy_net_level_2.fc2.out_features)
+        adversary = HierarchicalSARSAAgent()
         adversary.policy_net_level_1.load_state_dict(self.policy_net_level_1.state_dict())
         adversary.policy_net_level_2.load_state_dict(self.policy_net_level_2.state_dict())
         return adversary

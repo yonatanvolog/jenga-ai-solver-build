@@ -57,7 +57,7 @@ def training_loop(agent=None, env=None, num_episodes=50, batch_size=10, target_u
 
     # Initialize the agent and environment
     if agent is None:
-        agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
+        agent = HierarchicalDQNAgent()
     if env is None:
         env = Environment()
 

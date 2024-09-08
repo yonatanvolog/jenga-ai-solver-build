@@ -54,7 +54,7 @@ def training_loop(agent=None, env=None, num_episodes=50, batch_size=10, efficien
 
     # Initialize the agent and environment
     if agent is None:
-        agent = HierarchicalSARSAAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
+        agent = HierarchicalSARSAAgent()
     if env is None:
         env = Environment()
 

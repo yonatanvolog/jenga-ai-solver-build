@@ -91,6 +91,7 @@ def evaluate_winrate(agent, env, strategy, num_tests):
     """
     wins = 0
     adversary = Adversary(strategy=strategy)
+    env.reset()
     initial_state = utils.get_state_from_image(env.get_screenshot())
 
     for i in range(1, num_tests + 1):
@@ -152,7 +153,7 @@ def plot_1(env):
     """
         Trains the agent against itself, and plots the win rate against the strategies.
     """
-    agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
+    agent = HierarchicalDQNAgent()
     strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
     episode_intervals = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
     train_and_plot_winrate(agent, env, strategies, episode_intervals)
@@ -162,7 +163,7 @@ def plot_2(env):
     """
         Trains the agent against RandomStrategy, and plots the win rate against the strategies.
     """
-    agent = HierarchicalDQNAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
+    agent = HierarchicalDQNAgent()
     strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
     episode_intervals = [10, 10, 10, 10, 10, 10]
     train_and_plot_winrate(agent, env, strategies, episode_intervals, if_training_against_adversary=True)

@@ -149,7 +149,7 @@ def plot_1(env):
     """
     Trains the SARSA agent against itself and plots the win rate against the strategies.
     """
-    agent = HierarchicalSARSAAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
+    agent = HierarchicalSARSAAgent()
     strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
     episode_intervals = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
     train_and_plot_winrate(agent, env, strategies, episode_intervals)
@@ -159,7 +159,7 @@ def plot_2(env):
     """
     Trains the SARSA agent against RandomStrategy and plots the win rate against the strategies.
     """
-    agent = HierarchicalSARSAAgent(input_shape=(128, 64), num_actions_level_1=12, num_actions_level_2=3)
+    agent = HierarchicalSARSAAgent()
     strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
     episode_intervals = [10, 10, 10, 10, 10, 10]
     train_and_plot_winrate(agent, env, strategies, episode_intervals, if_training_against_adversary=True)

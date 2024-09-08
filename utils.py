@@ -1,10 +1,6 @@
 import torchvision.transforms as transforms
 from PIL import Image
-
-# Mapping from integer to color for Jenga blocks
-from environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL
-
-INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
+from environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL, INT_TO_COLOR
 
 
 def load_image(filename):
