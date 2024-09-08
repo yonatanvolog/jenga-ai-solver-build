@@ -29,12 +29,16 @@ class CommandType(Enum):
 
 
 class Environment:
-    def __init__(self, host="127.0.0.1", port_receive=25001, port_send=25002, unity_exe_path="../environment/jenga-game.exe"):
-        """Initialize the Environment with the host, port for receiving, port for sending, and path to the Unity executable."""
+    def __init__(self, host="127.0.0.1", port_receive=25001, port_send=25002,
+                 unity_exe_path="../environment/jenga-game.exe",
+                 relative_path_to_screenshots="../environment/screenshots"):
+        """Initialize the Environment with the host, port for receiving, port for sending, and path to the Unity
+        executable."""
         self.host = host
         self.port_receive = port_receive
         self.port_send = port_send
         self.unity_exe_path = unity_exe_path
+        self.relative_path_to_screenshots = relative_path_to_screenshots
         self.unity_process = None
         self.last_action = None  # To store the last action for reverting
 
@@ -42,13 +46,10 @@ class Environment:
             try:
                 self.start_unity()
             except FileNotFoundError:
-                print(f"Warning: Unity executable not found at {self.unity_exe_path}. Continuing without launching Unity.")
+                print(f"Warning: Unity executable not found at {self.unity_exe_path}. "
+                      f"Continuing without launching Unity.")
 
         self.set_timescale(100)  # Speed up the simulation
-
-        # Start listening for incoming Unity commands on a separate thread
-        listener_thread = threading.Thread(target=self.listen_for_commands, daemon=True)
-        listener_thread.start()
 
     def __enter__(self):
         """Context management entry point."""
@@ -107,8 +108,8 @@ class Environment:
                             break
                         command = data.decode('utf-8').strip()
                         print(f"Received command from Unity: {command}")
-                        # Optionally send a response back to Unity
-                        client.sendall(b"Command received")
+
+                        return command
 
     def reset(self):
         """Reset the Jenga game immediately."""
@@ -116,7 +117,7 @@ class Environment:
         self.last_action = None  # Resetting, so clear the last action
         return response
 
-    def step(self, action, wait_time=0.5):
+    def step(self, action, wait_time=0.5, relative_path_to_screenshots="..\environment\screenshots"):
         """
         Perform an action to remove a piece from the Jenga tower.
 
@@ -291,8 +292,7 @@ class Environment:
         response = self.send_command("isfallen")
         return response.lower() == "true"
 
-    @staticmethod
-    def get_screenshot(wait_time=1, retry_attempts=3, retry_delay=0.25):
+    def get_screenshot(self, wait_time=1, retry_attempts=3, retry_delay=0.25):
         """
         Capture a screenshot of the Jenga tower from a 45-degree angle, showing two sides.
 
@@ -303,7 +303,7 @@ class Environment:
             This method deletes any previous screenshot in the folder before saving the new one.
         """
         # Directory where screenshots are saved
-        screenshot_dir = os.path.join(os.getcwd(), "..\environment\screenshots")
+        screenshot_dir = os.path.join(os.getcwd(), self.relative_path_to_screenshots)
 
         time.sleep(wait_time)
 

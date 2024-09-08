@@ -149,37 +149,29 @@ def play(env, player_1_type, player_2_type, num_games):
             state, previous_action = result
 
 
-def start_tcp_listener():
+def start_listener():
     """
-    Listens for commands via TCP on port 25001. When receiving "start <player1_type> <player2_type> <num_games>",
+    Listens for commands via TCP using the environment function. When receiving "start <player1_type> <player2_type> <num_games>",
     it starts the play function and stops listening until the game finishes.
     """
-    env = Environment()
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('0.0.0.0', 25001))
-    server_socket.listen(1)  # Listen for one connection at a time
-    print("TCP listener started on port 25001...")
+    env = Environment(unity_exe_path=None, relative_path_to_screenshots="environment/screenshots")
 
     while True:
-        conn, addr = server_socket.accept()  # Wait for a client to connect
-        print(f"Connection from {addr} established.")
+        command = env.listen_for_commands()
+        print(command)
+        if not command.startswith("start"):
+            continue
+        # Parse the command
+        parts = command.split()
+        if len(parts) != 3:
+            continue
+        player_1_type = PlayerType(int(parts[1]))
+        player_2_type = PlayerType(int(parts[2]))
+        # num_games = int(parts[3])
 
-        with conn:
-            data = conn.recv(1024).decode('utf-8').strip()  # Receive up to 1024 bytes from the client
-
-            if not data.startswith("start"):
-                return
-            # Parse the command
-            parts = data.split()
-            if len(parts) != 4:
-                return
-            player_1_type = PlayerType(int(parts[1]))
-            player_2_type = PlayerType(int(parts[2]))
-            num_games = int(parts[3])
-
-            # Start the game
-            play(env, player_1_type, player_2_type, num_games)
+        # Start the game
+        play(env, player_1_type, player_2_type, 1)
 
 
 if __name__ == "__main__":
-    start_tcp_listener()
+    start_listener()
