@@ -299,6 +299,7 @@ class Environment:
                 "Expected one PNG file in the directory, but found {}".format(
                     len(png_files)))
 
+
 # DONT REMOVE THIS METHOD!
 def performance_test():
     env = Environment()
@@ -306,6 +307,7 @@ def performance_test():
     for level in range(11):  # Levels from 0 to 11
         for color in ['y', 'b', 'g']:  # For each color
             env.step((level, color))
+
 
 def main():
     unity_exe_path = os.path.join(os.getcwd(), "./jenga-game.exe")

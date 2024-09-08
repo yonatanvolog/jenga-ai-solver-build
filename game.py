@@ -1,4 +1,5 @@
 import itertools
+import socket
 from enum import Enum
 
 import utils
@@ -117,16 +118,16 @@ def _make_move(player_type, player, state, taken_actions, previous_action, env):
     return next_state, action
 
 
-def play(player_1_type, player_2_type, num_games):
+def play(env, player_1_type, player_2_type, num_games):
     """
     Simulates a series of games between two players.
 
     Args:
+        env (Environment): The Jenga environment.
         player_1_type (PlayerType): The type of the first player.
         player_2_type (PlayerType): The type of the second player.
         num_games (int): The number of games to simulate.
     """
-    env = Environment()
     player_1 = player_factory(player_1_type, env)
     player_2 = player_factory(player_2_type, env)
 
@@ -146,3 +147,39 @@ def play(player_1_type, player_2_type, num_games):
             if result is None:
                 break
             state, previous_action = result
+
+
+def start_tcp_listener():
+    """
+    Listens for commands via TCP on port 25001. When receiving "start <player1_type> <player2_type> <num_games>",
+    it starts the play function and stops listening until the game finishes.
+    """
+    env = Environment()
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(('0.0.0.0', 25001))
+    server_socket.listen(1)  # Listen for one connection at a time
+    print("TCP listener started on port 25001...")
+
+    while True:
+        conn, addr = server_socket.accept()  # Wait for a client to connect
+        print(f"Connection from {addr} established.")
+
+        with conn:
+            data = conn.recv(1024).decode('utf-8').strip()  # Receive up to 1024 bytes from the client
+
+            if not data.startswith("start"):
+                return
+            # Parse the command
+            parts = data.split()
+            if len(parts) != 4:
+                return
+            player_1_type = PlayerType(int(parts[1]))
+            player_2_type = PlayerType(int(parts[2]))
+            num_games = int(parts[3])
+
+            # Start the game
+            play(env, player_1_type, player_2_type, num_games)
+
+
+if __name__ == "__main__":
+    start_tcp_listener()
