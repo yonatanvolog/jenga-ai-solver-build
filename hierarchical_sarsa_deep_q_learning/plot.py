@@ -111,6 +111,7 @@ def evaluate_winrate(agent, env, strategy, num_tests):
                 previous_action = first_player.select_action(state, taken_actions, previous_action)
 
             if previous_action is None:
+                wins += 1
                 print("No actions to take. Stopping this game")
                 break
 
@@ -129,6 +130,7 @@ def evaluate_winrate(agent, env, strategy, num_tests):
                 previous_action = second_player.select_action(state, taken_actions, if_allow_exploration=False)
 
             if previous_action is None:
+                wins += 1
                 print("No actions to take. Stopping this game")
                 break
 

@@ -115,6 +115,7 @@ def evaluate_winrate(agent, env, strategy, num_tests):
                 previous_action = first_player.select_action(state, taken_actions, previous_action)
 
             if previous_action is None:
+                wins += 1
                 print("No actions to take. Stopping this game")
                 break
 
@@ -133,6 +134,7 @@ def evaluate_winrate(agent, env, strategy, num_tests):
                 previous_action = second_player.select_action(state, taken_actions, if_allow_exploration=False)
 
             if previous_action is None:
+                wins += 1
                 print("No actions to take. Stopping this game")
                 break
 
@@ -273,6 +275,7 @@ def evaluate_moves_until_collapse(agent, env, strategy, num_tests):
 
             if previous_action is None:
                 print("No actions to take. Stopping this game")
+                total_moves += move_count
                 break
 
             screenshot_filename, is_fallen = env.step(utils.format_action(previous_action))
@@ -293,6 +296,7 @@ def evaluate_moves_until_collapse(agent, env, strategy, num_tests):
 
             if previous_action is None:
                 print("No actions to take. Stopping this game")
+                total_moves += move_count
                 break
 
             screenshot_filename, is_fallen = env.step(utils.format_action(previous_action))
@@ -321,6 +325,6 @@ def plot_3(env):
 
 if __name__ == "__main__":
     env = Environment()
-    # plot_1(env)
+    plot_1(env)
     # plot_2(env)
-    plot_3(env)
+    # plot_3(env)
