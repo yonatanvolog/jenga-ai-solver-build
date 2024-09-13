@@ -46,13 +46,13 @@ def player_factory(player_type, env):
         return Adversary(strategy=RandomStrategy())
     elif player_type is PlayerType.DQN:
         agent = HierarchicalDQNAgent()
-        agent.load_model(level_1_path="../hierarchical_deep_q_learning/level_1.pth",
-                         level_2_path="../hierarchical_deep_q_learning/level_2.pth")
+        agent.load_model(level_1_path="hierarchical_deep_q_learning/level_1.pth",
+                         level_2_path="hierarchical_deep_q_learning/level_2.pth")
         return agent
     elif player_type is PlayerType.SARSA:
         agent = HierarchicalSARSAAgent()
-        agent.load_model(level_1_path="../hierarchical_sarsa_deep_q_learning/level_1.pth",
-                         level_2_path="../hierarchical_sarsa_deep_q_learning/level_2.pth")
+        agent.load_model(level_1_path="hierarchical_sarsa_deep_q_learning/level_1.pth",
+                         level_2_path="hierarchical_sarsa_deep_q_learning/level_2.pth")
         return agent
     elif player_type is PlayerType.GSBAS:
         return GSBASAgent(env)
@@ -106,7 +106,7 @@ def _make_move(player_type, player, state, taken_actions, previous_action, env):
         return  # End the game if no action can be taken
 
     # Take the action and get the updated state
-    screenshot_filename, is_fallen = env.step(utils.format_action(previous_action))
+    screenshot_filename, is_fallen = env.step(utils.format_action(action))
 
     if is_fallen:
         return  # End the game if the tower has fallen
@@ -163,14 +163,14 @@ def start_listener():
             continue
         # Parse the command
         parts = command.split()
-        if len(parts) != 3:
+        if len(parts) != 4:
             continue
         player_1_type = PlayerType(int(parts[1]))
         player_2_type = PlayerType(int(parts[2]))
-        # num_games = int(parts[3])
+        num_games = int(parts[3])
 
         # Start the game
-        play(env, player_1_type, player_2_type, 1)
+        play(env, player_1_type, player_2_type, num_games)
 
 
 if __name__ == "__main__":
