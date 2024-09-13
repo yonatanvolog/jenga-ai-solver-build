@@ -117,6 +117,10 @@ class Environment:
         self.last_action = None  # Resetting, so clear the last action
         return response
 
+    def select_action(self):
+        response = self.send_command("human")
+        return response  # tuple of format (level, color)
+
     def step(self, action, wait_time=0.5, relative_path_to_screenshots="..\environment\screenshots"):
         """
         Perform an action to remove a piece from the Jenga tower.
