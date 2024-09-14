@@ -5,12 +5,30 @@ import subprocess
 from enum import Enum
 import threading
 
+from jinja2.ext import loopcontrols
+
 MAX_LEVEL = 12
 MAX_BLOCKS_IN_LEVEL = 3
 SCREENSHOT_SHAPE = (128, 64)
 # Mapping from integer to color for Jenga blocks
 INT_TO_COLOR = {0: "y", 1: "b", 2: "g"}
 
+class PlayerType(Enum):
+    """
+    Enum representing different types of players in the game.
+
+    Attributes:
+        RANDOM: Represents a player that follows a random strategy.
+        DQN: Represents a player that uses a Hierarchical Deep Q-Network agent.
+        SARSA: Represents a player that uses a Hierarchical SARSA agent.
+        GSBAS: Represents a player that uses the Greedy Simulation-Based Action Search agent.
+        HUMAN: Represents a human player.
+    """
+    RANDOM = 0
+    DQN = 1
+    SARSA = 2
+    GSBAS = 3
+    HUMAN = 4
 
 class CommandType(Enum):
     REMOVE = "remove"
@@ -25,6 +43,7 @@ class CommandType(Enum):
     GETAVERAGEMAXTILTANGLE = "get_average_max_tilt_angle"
     GETMOSTMAXTILTANGLE = "get_most_max_tilt_angle"  # Added new command
     REVERTSTEP = "revert_step"
+    TOGGLEMENU = "toggle_menu"  # Added new command for toggle menu
     UNKNOWN = "unknown"
 
 
@@ -115,6 +134,11 @@ class Environment:
         """Reset the Jenga game immediately."""
         response = self.send_command("reset")
         self.last_action = None  # Resetting, so clear the last action
+        return response
+
+    def toggle_menu(self):
+        """Send a command to toggle the menu in Unity."""
+        response = self.send_command("toggle_menu")
         return response
 
     def select_action(self):
@@ -337,6 +361,66 @@ def performance_test():
             env.step((level, color))
 
 
+def start_game():
+    """
+    Main game loop to start the game and determine player types and number of rounds.
+    """
+    env = Environment(unity_exe_path=None, relative_path_to_screenshots="environment/screenshots")
+    env.reset()
+    env.toggle_menu()
+
+    while True:
+        start_command = env.listen_for_commands()
+        if start_command.startswith("start"):
+            _, p1_type, p2_type, num_of_rounds = start_command.split()
+            num_of_rounds = int(num_of_rounds)
+            p1_type = PlayerType(int(p1_type))
+            p2_type = PlayerType(int(p2_type))
+
+            if p1_type == PlayerType.HUMAN and p2_type == PlayerType.HUMAN:
+                human_vs_human(env, num_of_rounds)
+
+            # Optionally, handle other game modes with AI here
+
+def human_vs_human(env, num_of_rounds):
+    """
+    Simulate a game between two human players.
+
+    Parameters:
+        env: The game environment.
+        num_of_rounds: The number of rounds the game should last.
+    """
+    current_round = 1
+    current_player_index = 0
+    players = [0, 1]  # Two players, indexed as 0 and 1
+
+    while True:
+        # Send command indicating it's the current player's turn
+        print(f"Sending player_turn for Player {current_player_index}")
+        env.send_command(f"player_turn {4} {current_player_index} {current_round}")
+
+        # Wait for the "finished_move" command from Unity
+        command = env.listen_for_commands()
+        print(f"Received command: {command}")
+        if command.startswith("finished_move"):
+            time.sleep(3)  # Wait for 3 seconds to simulate a pause
+
+            # Check if the tower has fallen
+            if env.is_fallen():
+                print(f"Player {current_player_index} lost the game!")
+                if current_round == num_of_rounds:
+                    env.reset()
+                    env.toggle_menu()
+                    break
+                else:
+                    current_round += 1
+                    env.reset()
+                    continue
+
+            # Alternate between player 0 and player 1
+            current_player_index = 1 if current_player_index == 0 else 0
+
+
 def main():
     unity_exe_path = os.path.join(os.getcwd(), "./jenga-game.exe")
     with Environment(unity_exe_path=unity_exe_path) as env:
@@ -442,5 +526,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    start_game()
+    #main()
     #test()
