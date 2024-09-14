@@ -377,55 +377,10 @@ def start_game():
             num_of_rounds = int(num_of_rounds)
             p1_type = PlayerType(int(p1_type))
             p2_type = PlayerType(int(p2_type))
+            start_two_player_game(env, num_of_rounds, (p1_type, p2_type))
 
-            if p1_type == PlayerType.HUMAN and p2_type == PlayerType.HUMAN:
-                human_vs_human(env, num_of_rounds)
 
-            #indexes 0 to 3 are ai players
-            if p1_type == PlayerType.HUMAN and p2_type != PlayerType.HUMAN:
-                human_vs_ai(env, num_of_rounds, (p1_type, p2_type))
-
-            # Optionally, handle other game modes with AI here
-
-def human_vs_human(env, num_of_rounds):
-    """
-    Simulate a game between two human players.
-
-    Parameters:
-        env: The game environment.
-        num_of_rounds: The number of rounds the game should last.
-    """
-    current_round = 1
-    current_player_index = 0
-    players = [0, 1]  # Two players, indexed as 0 and 1
-
-    while True:
-        # Send command indicating it's the current player's turn
-        print(f"Sending player_turn for Player {current_player_index}")
-        env.send_command(f"player_turn {4} {current_player_index} {current_round}")
-
-        # Wait for the "finished_move" command from Unity
-        command = env.listen_for_commands()
-        print(f"Received command: {command}")
-        if command.startswith("finished_move"):
-            time.sleep(3)  # Wait for 3 seconds to simulate a pause
-
-            # Check if the tower has fallen
-            if env.is_fallen():
-                print(f"Player {current_player_index} lost the game!")
-                if current_round == num_of_rounds:
-                    env.reset()
-                    env.toggle_menu()
-                    break
-                else:
-                    current_round += 1
-                    env.reset()
-                    continue
-
-            # Alternate between player 0 and player 1
-            current_player_index = 1 if current_player_index == 0 else 0
-
-def human_vs_ai(env, num_of_rounds, player_types):
+def start_two_player_game(env, num_of_rounds, player_types):
     """
     Simulate a game between human and ai.
 
@@ -437,7 +392,7 @@ def human_vs_ai(env, num_of_rounds, player_types):
     current_player_index = 0
     players = [0, 1]  # Two players, indexed as 0 and 1
 
-    print("Starting human_vs_ai game")
+    print("Starting general 2 player game")
     while True:
         # Send command indicating it's the current player's turn
         print(f"Sending player_turn for Player {current_player_index}")
@@ -445,18 +400,17 @@ def human_vs_ai(env, num_of_rounds, player_types):
         env.send_command(
             f"player_turn {player_types[current_player_index].value} {current_player_index} {current_round}")
 
-        # This is the only thing that is added compared to human_vs_human, since python send the remove command
         if player_types[current_player_index] != PlayerType.HUMAN:
-            simulate_ai_removing_piece(env)
+            simulate_ai_removing_piece(env, current_player_index)
+
+        #if player_type== PlayerType.HUMAN, the player will remove piece via unity
 
         # Wait for the "finished_move" command from Unity
         command = env.listen_for_commands()
-        #time.sleep(10)
         print(f"Received command: {command}")
         if command.startswith("finished_move"):
-            #time.sleep(3)  # Wait for 3 seconds to simulate a pause
-            #MASHA: here you can get the screenshot
-
+            time.sleep(3)  # Wait for 3 seconds to simulate a pause, sleep does not freeze unity
+            # MASHA: here you can get the screenshot
             # Check if the tower has fallen
             if env.is_fallen():
                 print(f"Player {current_player_index} lost the game!")
@@ -472,40 +426,48 @@ def human_vs_ai(env, num_of_rounds, player_types):
             # Alternate between player 0 and player 1
             current_player_index = 1 if current_player_index == 0 else 0
 
-def simulate_ai_removing_piece(env):
+
+def simulate_ai_removing_piece(env, player_index):
     """
     Simulate an AI player removing a piece from the Jenga tower.
 
     Parameters:
         env: The game environment.
+        player_index: The index of the current player (0 for player 1, 1 for player 2).
 
     Note:
-        This method simulates the AI removing pieces in a sequential manner from the top level.
-        AI starts by removing pieces in the order (level, color): (0, 'y'), (0, 'b'), (0, 'g'), then proceeds
-        to the next levels.
+        Player 1 (p1) removes pieces in the order (level, 'y') from level 0 to 11.
+        Player 2 (p2) removes pieces in the order (level, 'g') from level 0 to 11.
     """
-    # Static counter to track the current piece being removed
-    if not hasattr(simulate_ai_removing_piece, "counter"):
-        simulate_ai_removing_piece.counter = 0
 
-    # Define the actions the AI will take, based on levels and colors
-    actions = [
-        (0, 'y'), (0, 'b'), (0, 'g'),
-        (1, 'y'), (1, 'b'), (1, 'g'),
-        (2, 'y'), (2, 'b'), (2, 'g'),
-        # Continue for all the levels up to MAX_LEVEL
-    ]
+    # Initialize counters for both players if they don't exist
+    if not hasattr(simulate_ai_removing_piece, "p1_counter"):
+        simulate_ai_removing_piece.p1_counter = 0
+    if not hasattr(simulate_ai_removing_piece, "p2_counter"):
+        simulate_ai_removing_piece.p2_counter = 0
 
-    # Execute the current action and increment the counter
-    if simulate_ai_removing_piece.counter < len(actions):
-        action = actions[simulate_ai_removing_piece.counter]
-        print(f"AI removing piece at level {action[0]} with color {action[1]}")
-        env.step(action, 3)
-        simulate_ai_removing_piece.counter += 1
-    else:
-        print("AI has removed all available pieces.")
+    # Define the action sequence for p1 and p2
+    p1_actions = [(level, 'y') for level in range(12)]  # p1 removes yellow pieces from level 0 to 11
+    p2_actions = [(level, 'g') for level in range(12)]  # p2 removes green pieces from level 0 to 11
 
+    # Execute the current action based on the player and their counter
+    if player_index == 0:  # Player 1's turn
+        if simulate_ai_removing_piece.p1_counter < len(p1_actions):
+            action = p1_actions[simulate_ai_removing_piece.p1_counter]
+            print(f"Player 1 (AI) removing piece at level {action[0]} with color {action[1]}")
+            env.step(action, 3)
+            simulate_ai_removing_piece.p1_counter += 1
+        else:
+            print("Player 1 (AI) has removed all available pieces.")
 
+    elif player_index == 1:  # Player 2's turn
+        if simulate_ai_removing_piece.p2_counter < len(p2_actions):
+            action = p2_actions[simulate_ai_removing_piece.p2_counter]
+            print(f"Player 2 (AI) removing piece at level {action[0]} with color {action[1]}")
+            env.step(action, 3)
+            simulate_ai_removing_piece.p2_counter += 1
+        else:
+            print("Player 2 (AI) has removed all available pieces.")
 
 
 def main():
