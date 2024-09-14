@@ -1,6 +1,7 @@
 import torchvision.transforms as transforms
 from PIL import Image
-from environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL, INT_TO_COLOR
+
+from environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL, INT_TO_COLOR, SCREENSHOT_SHAPE
 
 
 def load_image(filename):
@@ -31,7 +32,7 @@ def preprocess_image(image):
     """
     preprocess = transforms.Compose([
         transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
-        transforms.Resize((128, 64)),  # Resize to 128x64 pixels
+        transforms.Resize(SCREENSHOT_SHAPE),
         transforms.ToTensor(),        # Convert to tensor
         transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize to [-1, 1]
     ])
@@ -94,7 +95,7 @@ def format_action(action):
 
 def calculate_reward(action, previous_stability, current_stability):
     """
-    Calculates the reward for the agent's action.
+    Calculates the reward for the agent's action with a small bonus for minor instability and no penalty in such cases.
 
     Args:
         action (tuple): The action taken by the agent, including the level and color.
@@ -102,17 +103,24 @@ def calculate_reward(action, previous_stability, current_stability):
         current_stability (float): Stability after the move.
 
     Returns:
-        int: The calculated reward, including a penalty if the tower fell.
+        float: The calculated reward.
     """
     level, color = action
 
     # Base reward based on the level of the block removed
     base_reward = level
 
-    # Penalty for making the tower more unstable (greater tilt angle)
-    stability_penalty = (previous_stability - current_stability if previous_stability else -current_stability) * 10
+    # Calculate the stability difference
+    stability_diff = previous_stability - current_stability if previous_stability else -current_stability
+    print(stability_diff)
+
+    # Give a small bonus if stability changed only slightly (e.g., within a threshold)
+    stability_bonus = 5 if -3 <= stability_diff <= 1 else 0
+
+    # No stability penalty if the reduction is minor, or no bonus if the stability is improved
+    stability_penalty = 0 if stability_bonus or stability_diff > 0 else stability_diff * 10
 
     # Combine the rewards and penalties
-    reward = max(base_reward + stability_penalty, -20)
+    reward = max(base_reward + stability_bonus + stability_penalty, -20)
 
     return reward
