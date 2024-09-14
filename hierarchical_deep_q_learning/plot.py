@@ -325,6 +325,6 @@ def plot_3(env):
 
 if __name__ == "__main__":
     env = Environment()
-    plot_1(env)
+    # plot_1(env)
     # plot_2(env)
-    # plot_3(env)
+    plot_3(env)
