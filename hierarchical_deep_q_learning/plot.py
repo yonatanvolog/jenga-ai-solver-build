@@ -157,7 +157,7 @@ def plot_1(env):
     """
     agent = HierarchicalDQNAgent()
     strategies = [RandomStrategy(), OptimisticStrategy(), PessimisticStrategy()]
-    episode_intervals = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+    episode_intervals = [10, 10, 10, 10, 10]
     train_and_plot_winrate(agent, env, strategies, episode_intervals)
 
 
@@ -327,4 +327,4 @@ if __name__ == "__main__":
     env = Environment()
     # plot_1(env)
     # plot_2(env)
-    plot_3(env)
+    # plot_3(env)

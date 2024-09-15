@@ -93,14 +93,14 @@ def format_action(action):
     return action[0], INT_TO_COLOR[action[1]]
 
 
-def calculate_reward(action, previous_stability, current_stability):
+def calculate_reward(action, previous_tilt, current_tilt):
     """
     Calculates the reward for the agent's action with a small bonus for minor instability and no penalty in such cases.
 
     Args:
         action (tuple): The action taken by the agent, including the level and color.
-        previous_stability (float): Stability before the move.
-        current_stability (float): Stability after the move.
+        previous_tilt (float): Tilt before the move.
+        current_tilt (float): Tilt after the move.
 
     Returns:
         float: The calculated reward.
@@ -111,7 +111,7 @@ def calculate_reward(action, previous_stability, current_stability):
     base_reward = level
 
     # Calculate the stability penalty
-    stability_diff = previous_stability - current_stability if previous_stability else -current_stability
+    stability_diff = previous_tilt - current_tilt if previous_tilt else -current_tilt
     stability_penalty = stability_diff * 10
 
     # Combine the rewards and penalties

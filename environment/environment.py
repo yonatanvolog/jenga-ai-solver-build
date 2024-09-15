@@ -516,7 +516,7 @@ def main():
                     wait_time = 0.5
                 action = (level, color)
                 print(f"Performing action: remove piece at level {level}, color {color}...")
-                screenshot, is_fallen = env.step(action, wait_time)
+                screenshot, is_fallen = env.step(action, wait_time=wait_time)
                 print(f"Action performed. Screenshot saved at: {screenshot}")
                 print(f"Has the tower fallen? {'Yes' if is_fallen else 'No'}")
 
@@ -586,6 +586,5 @@ def main():
 
 
 if __name__ == "__main__":
-    start_game()
-    #main()
-    #test()
+    main()
+    # test()
