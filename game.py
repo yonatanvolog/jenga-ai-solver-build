@@ -119,7 +119,7 @@ def play(env, player_1_type, player_2_type, num_games):
             # Send command indicating it's the current player's turn
             print(f"Sending player_turn for Player {player_index}")
             env.send_command(
-                f"player_turn {player_type} {player_index} {i}")
+                f"player_turn {player_type.value} {player_index} {i}")
 
             if player_type != PlayerType.HUMAN:
                 _make_ai_move(player_type, player, state, taken_actions, previous_action, env)
