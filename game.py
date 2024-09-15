@@ -1,5 +1,4 @@
 import itertools
-import socket
 import time
 from enum import Enum
 
@@ -9,8 +8,6 @@ from adversary.strategy import RandomStrategy
 from hierarchical_deep_q_learning.hierarchical_deep_q_agent import HierarchicalDQNAgent
 from environment.environment import Environment, COLOR_TO_INT
 from hierarchical_sarsa_deep_q_learning.hierarchical_sarsa_agent import HierarchicalSARSAAgent
-from greedy_simulation_based_action_search.gsbas_agent import GSBASAgent
-from human_agent import HumanAgent
 
 
 class PlayerType(Enum):
