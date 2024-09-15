@@ -30,7 +30,7 @@ def update_epsilon(agent, efficiency_threshold, move_count):
 
 
 def training_loop(agent=None, env=None, num_episodes=50, batch_size=10, efficiency_threshold=10,
-                  if_load_weights=True, level_1_path="level_1.pth", level_2_path="level_2.pth",
+                  if_load_weights=True, level_1_path="weights/level_1.pth", level_2_path="weights/level_2.pth",
                   if_training_against_adversary=False, strategy=RandomStrategy()):
     """
     Runs the training loop for the HierarchicalSARSAAgent using SARSA in a Jenga environment.
