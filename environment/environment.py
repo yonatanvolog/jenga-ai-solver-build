@@ -426,6 +426,11 @@ def start_two_player_game(env, num_of_rounds, player_types):
             # Alternate between player 0 and player 1
             current_player_index = 1 if current_player_index == 0 else 0
 
+        if command.startswith("end_game"):
+            env.reset()
+            env.toggle_menu()
+            return
+
 
 def simulate_ai_removing_piece(env, player_index):
     """
