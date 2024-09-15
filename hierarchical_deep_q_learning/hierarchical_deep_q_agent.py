@@ -6,7 +6,7 @@ from torch import optim
 
 import utils
 from deep_q_network.deep_q_network import DQN, ReplayMemory
-from environment.environment import SCREENSHOT_SHAPE, MAX_LEVEL, MAX_BLOCKS_IN_LEVEL
+from dev_environment.environment import SCREENSHOT_SHAPE, MAX_LEVEL, MAX_BLOCKS_IN_LEVEL
 
 
 class HierarchicalDQNAgent:

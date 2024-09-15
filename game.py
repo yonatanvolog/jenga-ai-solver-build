@@ -6,7 +6,7 @@ import utils
 from adversary.adversary import Adversary
 from adversary.strategy import RandomStrategy
 from hierarchical_deep_q_learning.hierarchical_deep_q_agent import HierarchicalDQNAgent
-from environment.environment import Environment, COLOR_TO_INT
+from dev_environment.environment import Environment, COLOR_TO_INT
 from hierarchical_sarsa_deep_q_learning.hierarchical_sarsa_agent import HierarchicalSARSAAgent
 
 
@@ -154,7 +154,7 @@ def listen_for_start():
     """
     Main game loop to start the game and determine player types and number of rounds.
     """
-    env = Environment(relative_path_to_screenshots="environment/screenshots", unity_exe_path=None)
+    env = Environment(relative_path_to_screenshots="dev_environment/screenshots", unity_exe_path=None)
     env.reset()
     env.toggle_menu()
 

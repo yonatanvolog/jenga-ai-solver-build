@@ -7,7 +7,7 @@ import utils
 from adversary.adversary import Adversary
 from adversary.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
 from hierarchical_deep_q_learning.hierarchical_deep_q_agent import HierarchicalDQNAgent
-from environment.environment import Environment
+from dev_environment.environment import Environment
 from training_loop import training_loop
 
 

@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 import utils
 from adversary.adversary import Adversary
 from adversary.strategy import RandomStrategy, OptimisticStrategy, PessimisticStrategy
-from environment.environment import Environment
+from dev_environment.environment import Environment
 from greedy_simulation_based_action_search.gsbas_agent import GSBASAgent
 
 

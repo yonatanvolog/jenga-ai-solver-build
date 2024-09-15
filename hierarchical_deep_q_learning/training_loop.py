@@ -4,7 +4,7 @@ import utils
 from adversary.adversary import Adversary
 from hierarchical_deep_q_learning.hierarchical_deep_q_agent import HierarchicalDQNAgent
 from adversary.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
-from environment.environment import Environment
+from dev_environment.environment import Environment
 
 
 def update_epsilon(agent, efficiency_threshold, move_count):

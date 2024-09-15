@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import random
 
-from environment.environment import MAX_LEVEL, MAX_BLOCKS_IN_LEVEL
+from dev_environment.environment import MAX_LEVEL, MAX_BLOCKS_IN_LEVEL
 
 
 class Strategy(ABC):

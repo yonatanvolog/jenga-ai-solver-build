@@ -2,7 +2,7 @@ import itertools
 import utils
 from adversary.adversary import Adversary
 from adversary.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
-from environment.environment import Environment
+from dev_environment.environment import Environment
 from hierarchical_sarsa_deep_q_learning.hierarchical_sarsa_agent import HierarchicalSARSAAgent
 
 

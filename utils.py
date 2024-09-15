@@ -1,7 +1,7 @@
 import torchvision.transforms as transforms
 from PIL import Image
 
-from environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL, INT_TO_COLOR, SCREENSHOT_SHAPE
+from dev_environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL, INT_TO_COLOR, SCREENSHOT_SHAPE
 
 
 def load_image(filename):

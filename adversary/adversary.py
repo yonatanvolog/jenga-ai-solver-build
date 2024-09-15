@@ -2,7 +2,7 @@ import random
 
 import utils
 from adversary.strategy import RandomStrategy
-from environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL
+from dev_environment.environment import MAX_BLOCKS_IN_LEVEL, MAX_LEVEL
 
 
 class Adversary:

@@ -5,7 +5,7 @@ import utils
 from adversary.adversary import Adversary
 from adversary.strategy import RandomStrategy, PessimisticStrategy, OptimisticStrategy
 from hierarchical_sarsa_agent import HierarchicalSARSAAgent  # Import SARSA Agent
-from environment.environment import Environment
+from dev_environment.environment import Environment
 from training_loop import training_loop
 
 
