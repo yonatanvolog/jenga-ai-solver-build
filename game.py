@@ -34,12 +34,12 @@ def player_factory(player_type):
     if player_type is PlayerType.RANDOM:
         return Adversary(strategy=RandomStrategy())
     elif player_type is PlayerType.DQN:
-        agent = HierarchicalDQNAgent()
+        agent = HierarchicalDQNAgent(epsilon_start=0.3)  # randomizing the actions a bit to make more interesting
         agent.load_model(level_1_path="hierarchical_deep_q_learning/weights/level_1_game.pth",
                          level_2_path="hierarchical_deep_q_learning/weights/level_2_game.pth")
         return agent
     elif player_type is PlayerType.SARSA:
-        agent = HierarchicalSARSAAgent()
+        agent = HierarchicalSARSAAgent(epsilon_start=0.3)
         agent.load_model(level_1_path="hierarchical_sarsa_deep_q_learning/weights/level_1_game.pth",
                          level_2_path="hierarchical_sarsa_deep_q_learning/weights/level_2_game.pth")
         return agent
@@ -62,10 +62,7 @@ def select_action(player_type, player, state, taken_actions, previous_action):
     """
     if player_type is PlayerType.RANDOM:
         return player.select_action(state, taken_actions, previous_action)
-    elif player_type in [PlayerType.DQN, PlayerType.SARSA]:
-        return player.select_action(state, taken_actions, if_allow_exploration=False)
-    else:
-        return player.select_action(state, taken_actions)
+    return player.select_action(state, taken_actions)
 
 
 def _make_ai_move(player_type, player, state, taken_actions, previous_action, env):
