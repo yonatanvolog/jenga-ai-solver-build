@@ -105,7 +105,7 @@ def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episod
     env.reset()  # Reset the environment for a new episode
     taken_actions = set()  # Reset the made actions
     previous_action = None
-    previous_tilt = None
+    previous_stability = None
     state = utils.get_state_from_image(env.get_screenshot())  # Get and preprocess the initial state
     move_count = 0  # Track the number of moves in the current episode
     players = [(agent, "Agent"), (adversary, "Adversary")]
@@ -118,11 +118,11 @@ def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episod
             print(f"{role}'s move")
         result = _make_move(player, env, state, taken_actions, batch_size,
                             previous_action if role == "Adversary" else None,
-                            previous_tilt)
+                            previous_stability)
         if result is None:
             break
 
-        state, previous_action, previous_tilt = result
+        state, previous_action, previous_stability = result
 
     # Adjust exploration if the tower fell too quickly
     update_epsilon(agent, efficiency_threshold, move_count)
@@ -131,7 +131,7 @@ def _run_episode(adversary, agent, batch_size, efficiency_threshold, env, episod
         agent.update_target_net()
 
 
-def _make_move(agent, env, state, taken_actions, batch_size, previous_action=None, previous_tilt=None):
+def _make_move(agent, env, state, taken_actions, batch_size, previous_action=None, previous_stability=None):
     """
     Executes a move in the Jenga game by either the agent or the adversary.
 
@@ -163,13 +163,13 @@ def _make_move(agent, env, state, taken_actions, batch_size, previous_action=Non
         print("No action to take. Ending the episode")
         return
 
-    current_tilt = env.get_average_max_tilt_angle()
+    current_stability = env.get_average_max_tilt_angle()
 
     screenshot_filename, is_fallen = env.step(utils.format_action(action))
     next_state = utils.get_state_from_image(screenshot_filename)
 
     if previous_action is None:
-        reward = utils.calculate_reward(action, previous_tilt, current_tilt)
+        reward = utils.calculate_reward(action, previous_stability, current_stability)
         agent.memory.push(state, action, reward, next_state, is_fallen)
         agent.optimize_model(batch_size)
 
@@ -177,7 +177,7 @@ def _make_move(agent, env, state, taken_actions, batch_size, previous_action=Non
         print("The tower has fallen. Ending the episode")
         return
 
-    return next_state, action, current_tilt
+    return next_state, action, current_stability
 
 
 if __name__ == "__main__":

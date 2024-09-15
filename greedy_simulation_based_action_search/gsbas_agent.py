@@ -30,7 +30,7 @@ class GSBASAgent:
 
         # Get all possible actions
         possible_actions = utils.get_possible_actions(taken_actions)
-        previous_tilt = self.env.get_average_max_tilt_angle()
+        previous_stability = self.env.get_average_max_tilt_angle()
 
         for action in random.sample(possible_actions, min(10, len(possible_actions))):
             print(f"Simulating action {action}")
@@ -42,11 +42,11 @@ class GSBASAgent:
                 self.env.revert_step()
                 continue
 
-            # Get current tilt after action
-            current_tilt = self.env.get_average_max_tilt_angle()
+            # Get current stability after action
+            current_stability = self.env.get_average_max_tilt_angle()
 
             # Calculate the reward for this action
-            reward = utils.calculate_reward(action, previous_tilt, current_tilt)
+            reward = utils.calculate_reward(action, previous_stability, current_stability)
 
             # Keep track of the best action
             if reward > best_reward:

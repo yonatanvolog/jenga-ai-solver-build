@@ -37,7 +37,7 @@ class HierarchicalSARSAAgent:
         # Replay memory
         self.memory = ReplayMemory(10000)
 
-    def save_model(self, level_1_path="weights/level_1.pth", level_2_path="weights/level_2.pth"):
+    def save_model(self, level_1_path="level_1.pth", level_2_path="level_2.pth"):
         """
         Save the weights of the policy networks to files.
 
@@ -49,7 +49,7 @@ class HierarchicalSARSAAgent:
         torch.save(self.policy_net_level_2.state_dict(), level_2_path)
         print(f"Model saved to {level_1_path} and {level_2_path}")
 
-    def load_model(self, level_1_path="weights/level_1.pth", level_2_path="weights/level_2.pth"):
+    def load_model(self, level_1_path="level_1.pth", level_2_path="level_2.pth"):
         """
         Load the weights of the policy networks from files.
 

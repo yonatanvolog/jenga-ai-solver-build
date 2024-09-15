@@ -39,8 +39,8 @@ def train_and_plot_winrate(agent, env, strategies, episode_intervals, num_tests=
             batch_size=batch_size,
             target_update=target_update,
             if_load_weights=False if i == 0 else True,
-            level_1_path="weights/level_1_plots.pth",
-            level_2_path="weights/level_2_plots.pth",
+            level_1_path="level_1_plots.pth",
+            level_2_path="level_2_plots.pth",
             if_training_against_adversary=if_training_against_adversary
         )
 
@@ -200,8 +200,8 @@ def train_and_plot_moves_until_collapse(agent, env, strategies, episode_interval
             batch_size=batch_size,
             target_update=target_update,
             if_load_weights=False if i == 0 else True,
-            level_1_path="weights/level_1_plots.pth",
-            level_2_path="weights/level_2_plots.pth",
+            level_1_path="level_1_plots.pth",
+            level_2_path="level_2_plots.pth",
             if_training_against_adversary=if_training_against_adversary
         )
 
