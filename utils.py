@@ -110,17 +110,11 @@ def calculate_reward(action, previous_stability, current_stability):
     # Base reward based on the level of the block removed
     base_reward = level
 
-    # Calculate the stability difference
+    # Calculate the stability penalty
     stability_diff = previous_stability - current_stability if previous_stability else -current_stability
-    print(stability_diff)
-
-    # Give a small bonus if stability changed only slightly (e.g., within a threshold)
-    stability_bonus = 5 if -3 <= stability_diff <= 1 else 0
-
-    # No stability penalty if the reduction is minor, or no bonus if the stability is improved
-    stability_penalty = 0 if stability_bonus or stability_diff > 0 else stability_diff * 10
+    stability_penalty = stability_diff * 10
 
     # Combine the rewards and penalties
-    reward = max(base_reward + stability_bonus + stability_penalty, -20)
+    reward = max(base_reward + stability_penalty, -20)
 
     return reward
