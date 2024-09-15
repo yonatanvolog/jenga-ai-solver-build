@@ -95,7 +95,7 @@ def format_action(action):
 
 def calculate_reward(action, previous_tilt, current_tilt):
     """
-    Calculates the reward for the agent's action with a small bonus for minor instability and no penalty in such cases.
+    Calculates the reward for the agent's action.
 
     Args:
         action (tuple): The action taken by the agent, including the level and color.
@@ -111,10 +111,10 @@ def calculate_reward(action, previous_tilt, current_tilt):
     base_reward = level
 
     # Calculate the stability penalty
-    stability_diff = previous_tilt - current_tilt if previous_tilt else -current_tilt
-    stability_penalty = stability_diff * 10
+    tilt_diff = previous_tilt - current_tilt if previous_tilt else -current_tilt
+    tilt_penalty = tilt_diff * 10
 
     # Combine the rewards and penalties
-    reward = max(base_reward + stability_penalty, -20)
+    reward = max(base_reward + tilt_penalty, -20)
 
     return reward
