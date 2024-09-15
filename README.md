@@ -47,4 +47,4 @@ Please note that all the following you can do on a Windows machine only!
 2. Run plot.py (there are 1 for the GSBAS and 3 for the other agents plots available, uncomment the plot you want to run). 
    The Jenga development build should run automatically. If they fail to connect, simply rerun plot.py.
 
-Feel free to explore the code, experiment with the agents, and try out the interactive game!
+Feel free to explore the code, experiment with the agents, and try out the interactive game! If you'd like to know more about the project, check out the file report-jenga.pdf.
