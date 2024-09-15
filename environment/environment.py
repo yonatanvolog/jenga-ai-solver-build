@@ -29,8 +29,7 @@ class PlayerType(Enum):
     RANDOM = 0
     DQN = 1
     SARSA = 2
-    GSBAS = 3
-    HUMAN = 4
+    HUMAN = 3
 
 class CommandType(Enum):
     REMOVE = "remove"
@@ -586,5 +585,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    start_game()
+    #main()
     # test()
