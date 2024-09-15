@@ -35,13 +35,13 @@ def player_factory(player_type):
         return Adversary(strategy=RandomStrategy())
     elif player_type is PlayerType.DQN:
         agent = HierarchicalDQNAgent()
-        agent.load_model(level_1_path="hierarchical_deep_q_learning/level_1.pth",
-                         level_2_path="hierarchical_deep_q_learning/level_2.pth")
+        agent.load_model(level_1_path="hierarchical_deep_q_learning/weights/level_1_game.pth",
+                         level_2_path="hierarchical_deep_q_learning/weights/level_2_game.pth")
         return agent
     elif player_type is PlayerType.SARSA:
         agent = HierarchicalSARSAAgent()
-        agent.load_model(level_1_path="hierarchical_sarsa_deep_q_learning/level_1.pth",
-                         level_2_path="hierarchical_sarsa_deep_q_learning/level_2.pth")
+        agent.load_model(level_1_path="hierarchical_sarsa_deep_q_learning/weights/level_1_game.pth",
+                         level_2_path="hierarchical_sarsa_deep_q_learning/weights/level_2_game.pth")
         return agent
     return
 

@@ -6,7 +6,7 @@ This project focuses on developing AI agents capable of playing the game of **Je
 The project consists of three AI agents, each using a different approach to solve the problem:
 
 - **GSBAS (Greedy Simulation-Based Action Search):**  
-  This agent simulates multiple actions in real-time and chooses the one that maximizes the immediate reward based on the stability of the tower.
+  This agent simulates multiple actions in real-time and chooses the one that maximizes the immediate reward based on the tilt of the tower.
   
 - **Hierarchical DQN:**  
   A Deep Q-Network agent that uses two separate networks to independently choose the **level** and **color** of the block to remove. This approach allows the agent to optimize both choices through reinforcement learning.
@@ -16,7 +16,7 @@ The project consists of three AI agents, each using a different approach to solv
 
 ## Features
 - **Strategic Block Removal:** Agents remove blocks while avoiding tower collapse, balancing risk and reward with each move.
-- **Simulation-Based Learning:** Agents interact with a Unity physics engine that simulates realistic block collisions and tower instability.
+- **Simulation-Based Learning:** Agents interact with a Unity physics engine that simulates realistic block collisions and tower intilt.
 - **Hierarchical Decision-Making:** The DQN and SARSA agents use separate neural networks to handle multi-level decisions, choosing the best block to remove based on learned strategies.
 
 ## Gameplay
