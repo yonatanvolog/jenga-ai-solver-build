@@ -1,4 +1,4 @@
-# Jenga AI Solver: Hierarchical Agents for Strategic Block Removal
+# Jenga AI Solver: Agents for Strategic Block Removal
 
 This project focuses on developing AI agents capable of playing the game of **Jenga** using reinforcement learning and simulation-based strategies. The game involves players strategically removing blocks from a tower and placing them on top without causing the tower to collapse. Our solution models this problem in a **Unity-based simulation environment**, where agents remove blocks while aiming to destabilize the tower for their opponent.
 
