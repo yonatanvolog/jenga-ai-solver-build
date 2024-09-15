@@ -34,7 +34,8 @@ def player_factory(player_type):
     if player_type is PlayerType.RANDOM:
         return Adversary(strategy=RandomStrategy())
     elif player_type is PlayerType.DQN:
-        agent = HierarchicalDQNAgent(epsilon_start=0.3)  # randomizing the actions a bit to make more interesting
+        # randomizing the actions a bit to make the agents use other actions
+        agent = HierarchicalDQNAgent(epsilon_start=0.3)
         agent.load_model(level_1_path="hierarchical_deep_q_learning/weights/level_1_game.pth",
                          level_2_path="hierarchical_deep_q_learning/weights/level_2_game.pth")
         return agent
