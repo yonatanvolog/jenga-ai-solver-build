@@ -1,12 +1,13 @@
 import itertools
 import socket
+import time
 from enum import Enum
 
 import utils
 from adversary.adversary import Adversary
 from adversary.strategy import RandomStrategy
 from hierarchical_deep_q_learning.hierarchical_deep_q_agent import HierarchicalDQNAgent
-from environment.environment import Environment
+from environment.environment import Environment, COLOR_TO_INT
 from hierarchical_sarsa_deep_q_learning.hierarchical_sarsa_agent import HierarchicalSARSAAgent
 from greedy_simulation_based_action_search.gsbas_agent import GSBASAgent
 from human_agent import HumanAgent
@@ -15,31 +16,22 @@ from human_agent import HumanAgent
 class PlayerType(Enum):
     """
     Enum representing different types of players in the game.
-
-    Attributes:
-        RANDOM: Represents a player that follows a random strategy.
-        DQN: Represents a player that uses a Hierarchical Deep Q-Network agent.
-        SARSA: Represents a player that uses a Hierarchical SARSA agent.
-        GSBAS: Represents a player that uses the Greedy Simulation-Based Action Search agent.
-        HUMAN: Represents a human player.
     """
     RANDOM = 0
     DQN = 1
     SARSA = 2
-    GSBAS = 3
-    HUMAN = 4
+    HUMAN = 3
 
 
-def player_factory(player_type, env):
+def player_factory(player_type):
     """
     Factory function to create different types of players based on PlayerType.
 
     Args:
         player_type (PlayerType): The type of player to create.
-        env (Environment): The game environment that agents or human players interact with.
 
     Returns:
-        Adversary, HierarchicalDQNAgent, HierarchicalSARSAAgent, GSBASAgent, or HumanAgent:
+        Adversary, HierarchicalDQNAgent, or HierarchicalSARSAAgent:
         A player of the specified type.
     """
     if player_type is PlayerType.RANDOM:
@@ -54,9 +46,7 @@ def player_factory(player_type, env):
         agent.load_model(level_1_path="hierarchical_sarsa_deep_q_learning/level_1.pth",
                          level_2_path="hierarchical_sarsa_deep_q_learning/level_2.pth")
         return agent
-    elif player_type is PlayerType.GSBAS:
-        return GSBASAgent(env)
-    return HumanAgent(env)
+    return
 
 
 def select_action(player_type, player, state, taken_actions, previous_action):
@@ -81,9 +71,10 @@ def select_action(player_type, player, state, taken_actions, previous_action):
         return player.select_action(state, taken_actions)
 
 
-def _make_move(player_type, player, state, taken_actions, previous_action, env):
+def _make_ai_move(player_type, player, state, taken_actions, previous_action, env):
     """
-    Facilitates making a move for a specified player type, executing the action in the game environment, and updating the state.
+    Facilitates making a move for a specified player type, executing the action in the game environment, and updating
+    the state.
 
     Args:
         player_type (PlayerType): The type of player executing the move (e.g., AI agent or human).
@@ -92,12 +83,6 @@ def _make_move(player_type, player, state, taken_actions, previous_action, env):
         taken_actions (set): A set of already performed actions, ensuring no duplicate actions.
         previous_action (tuple): The last action taken in the game, used to track progress.
         env (Environment): The game environment where actions are executed and game state is updated.
-
-    Returns:
-        Optional[tuple]:
-            - next_state (torch.Tensor): The updated state of the game after performing the action.
-            - action (tuple): The action taken in the current move, represented as (level, color).
-        If no action can be taken or the tower falls, the function returns None.
     """
 
     action = select_action(player_type, player, state, taken_actions, previous_action)
@@ -105,17 +90,7 @@ def _make_move(player_type, player, state, taken_actions, previous_action, env):
     if action is None:
         return  # End the game if no action can be taken
 
-    # Take the action and get the updated state
-    screenshot_filename, is_fallen = env.step(utils.format_action(action))
-
-    if is_fallen:
-        return  # End the game if the tower has fallen
-
-    # Update the game state and record the action taken
-    next_state = utils.get_state_from_image(screenshot_filename)
-    taken_actions.add(action)
-
-    return next_state, action
+    env.step(utils.format_action(action), if_get_state=False)
 
 
 def play(env, player_1_type, player_2_type, num_games):
@@ -128,50 +103,75 @@ def play(env, player_1_type, player_2_type, num_games):
         player_2_type (PlayerType): The type of the second player.
         num_games (int): The number of games to simulate.
     """
-    player_1 = player_factory(player_1_type, env)
-    player_2 = player_factory(player_2_type, env)
+    player_1 = player_factory(player_1_type)
+    player_2 = player_factory(player_2_type)
 
     env.reset()  # Reset the environment
     initial_state = utils.get_state_from_image(env.get_screenshot())
 
     # Loop through the specified number of games
-    for _ in range(num_games):
+    for i in range(1, num_games + 1):
         env.reset()  # Reset the environment for each game
         taken_actions = set()  # Track the actions taken
         state = initial_state  # Initialize the state for the game
         previous_action = None
 
         # Loop through the moves made in the game until completion
-        for player_type, player in itertools.cycle([(player_1_type, player_1), (player_2_type, player_2)]):
-            result = _make_move(player_type, player, state, taken_actions, previous_action, env)
-            if result is None:
-                break
-            state, previous_action = result
+        for player_type, player, player_index in itertools.cycle([(player_1_type, player_1, 0),
+                                                                  (player_2_type, player_2, 1)]):
+            # Send command indicating it's the current player's turn
+            print(f"Sending player_turn for Player {player_index}")
+            env.send_command(
+                f"player_turn {player_type} {player_index} {i}")
+
+            if player_type != PlayerType.HUMAN:
+                _make_ai_move(player_type, player, state, taken_actions, previous_action, env)
+
+            # Wait for the "finished_move" command from Unity
+            command = env.listen_for_commands()
+            print(f"Received command: {command}")
+            if command.startswith("finished_move"):
+
+                # Check if the tower has fallen
+                time.sleep(0.5)
+                is_fallen = env.is_fallen()
+                # Retrieve the screenshot after performing the action
+                time.sleep(0.5)
+                state = utils.get_state_from_image(env.get_screenshot())
+                _, level, color = command.split()
+                previous_action = (level, COLOR_TO_INT[color])
+                taken_actions.add(previous_action)
+
+                if is_fallen:
+                    print(f"Player {player_index} lost the game!")
+                    break
+
+            if command.startswith("end_game"):
+                env.reset()
+                env.toggle_menu()
+                return
+
+        env.reset()
+        env.toggle_menu()
 
 
-def start_listener():
+def listen_for_start():
     """
-    Listens for commands via TCP using the environment function. When receiving "start <player1_type> <player2_type> <num_games>",
-    it starts the play function and stops listening until the game finishes.
+    Main game loop to start the game and determine player types and number of rounds.
     """
-    env = Environment(unity_exe_path=None, relative_path_to_screenshots="environment/screenshots")
+    env = Environment(relative_path_to_screenshots="environment/screenshots", unity_exe_path=None)
+    env.reset()
+    env.toggle_menu()
 
     while True:
-        command = env.listen_for_commands()
-        print(command)
-        if not command.startswith("start"):
-            continue
-        # Parse the command
-        parts = command.split()
-        if len(parts) != 4:
-            continue
-        player_1_type = PlayerType(int(parts[1]))
-        player_2_type = PlayerType(int(parts[2]))
-        num_games = int(parts[3])
-
-        # Start the game
-        play(env, player_1_type, player_2_type, num_games)
+        start_command = env.listen_for_commands()
+        if start_command.startswith("start"):
+            _, p1_type, p2_type, num_games = start_command.split()
+            num_games = int(num_games)
+            p1_type = PlayerType(int(p1_type))
+            p2_type = PlayerType(int(p2_type))
+            play(env, p1_type, p2_type, num_games)
 
 
 if __name__ == "__main__":
-    start_listener()
+    listen_for_start()
