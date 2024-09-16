@@ -101,12 +101,10 @@ def play(env, player_1_type, player_2_type, num_games):
     player_1 = player_factory(player_1_type)
     player_2 = player_factory(player_2_type)
 
-    #env.reset()  # Reset the environment
     initial_state = utils.get_state_from_image(env.get_screenshot())
 
     # Loop through the specified number of games
     for i in range(1, num_games + 1):
-        # env.reset()  # Reset the environment for each game
         taken_actions = set()  # Track the actions taken
         state = initial_state  # Initialize the state for the game
         previous_action = None
@@ -157,7 +155,8 @@ def listen_for_start():
     """
     Main game loop to start the game and determine player types and number of rounds.
     """
-    env = Environment(relative_path_to_screenshots="dev_environment/screenshots", unity_exe_path=None)
+    env = Environment(relative_path_to_screenshots="./screenshots",
+                      unity_exe_path="./prod_environment/jenga-game.exe")
     env.reset()
     env.toggle_menu()
 
