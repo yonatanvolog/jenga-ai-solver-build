@@ -101,12 +101,12 @@ def play(env, player_1_type, player_2_type, num_games):
     player_1 = player_factory(player_1_type)
     player_2 = player_factory(player_2_type)
 
-    env.reset()  # Reset the environment
+    #env.reset()  # Reset the environment
     initial_state = utils.get_state_from_image(env.get_screenshot())
 
     # Loop through the specified number of games
     for i in range(1, num_games + 1):
-        env.reset()  # Reset the environment for each game
+        # env.reset()  # Reset the environment for each game
         taken_actions = set()  # Track the actions taken
         state = initial_state  # Initialize the state for the game
         previous_action = None
@@ -139,6 +139,8 @@ def play(env, player_1_type, player_2_type, num_games):
 
                 if is_fallen:
                     print(f"Player {player_index} lost the game!")
+                    time.sleep(2) # Give players time to see who has won
+                    env.reset()
                     break
 
             if command.startswith("end_game"):
@@ -146,8 +148,9 @@ def play(env, player_1_type, player_2_type, num_games):
                 env.toggle_menu()
                 return
 
-        env.reset()
-        env.toggle_menu()
+        # Show menu only when the last round ended
+        if i == num_games:
+            env.toggle_menu()
 
 
 def listen_for_start():
