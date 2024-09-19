@@ -25,7 +25,7 @@ In addition to solving the strategic Jenga problem, we've created a **playable g
 - A user to play against one of our **AI agents**.
 - Observing **AI agents** playing against each other to see how they handle the game.
 
-Please note that all the following you can do on a Windows machine only!
+Please note that all the following you can do on a Windows machine only, and only in Pycharm!
 
 ## How to play
 1. Go to prod_environment and run the only .exe file that is there.
